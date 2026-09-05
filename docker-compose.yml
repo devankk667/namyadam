@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DEMO_MODE=true
+      - MODEL_PATH=/app/ml/models/best_model
+      - DEMO_DATA_PATH=/app/data/demo/thermal_detections_demo.json
+    volumes:
+      - ./data:/app/data
+      - ./ml/models:/app/ml/models
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000/api
