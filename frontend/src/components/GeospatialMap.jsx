@@ -1,15 +1,8 @@
 import React, { useEffect } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
 import { useNavigate } from 'react-router-dom';
-import { ExternalLink, Flame } from 'lucide-react';
-
-const CLASS_COLORS = {
-  industrial_fire: '#ef4444',            // Red
-  industrial_thermal_source: '#f97316',   // Orange
-  wildfire: '#eab308',                    // Yellow
-  agricultural_burning: '#10b981',        // Green
-  other_thermal_anomaly: '#6b7280'        // Gray
-};
+import { ArrowUpRight } from 'lucide-react';
+import { classificationMeta, formatClassLabel, CLASSIFICATIONS } from '../lib/classification';
 
 function MapRecenter({ selectedDetection }) {
   const map = useMap();
@@ -23,7 +16,7 @@ function MapRecenter({ selectedDetection }) {
   return null;
 }
 
-export default function GeospatialMap({ detections = [], selectedDetection, onSelectDetection }) {
+export default function GeospatialMap({ detections = [], selectedDetection, onSelectDetection, height = '550px' }) {
   const navigate = useNavigate();
 
   const getMarkerRadius = (frp, isSelected) => {
@@ -32,12 +25,12 @@ export default function GeospatialMap({ detections = [], selectedDetection, onSe
   };
 
   return (
-    <div className="relative w-full h-[550px] rounded-xl overflow-hidden border border-slate-800 shadow-2xl">
+    <div className="relative w-full border border-line" style={{ height }}>
       <MapContainer
         center={[25.0, 10.0]}
         zoom={2}
         scrollWheelZoom={true}
-        className="w-full h-full bg-slate-950"
+        className="w-full h-full"
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -47,7 +40,7 @@ export default function GeospatialMap({ detections = [], selectedDetection, onSe
         <MapRecenter selectedDetection={selectedDetection} />
 
         {detections.map((det) => {
-          const color = CLASS_COLORS[det.true_class] || CLASS_COLORS.other_thermal_anomaly;
+          const meta = classificationMeta(det.true_class);
           const isSelected = selectedDetection?.id === det.id;
 
           return (
@@ -56,37 +49,41 @@ export default function GeospatialMap({ detections = [], selectedDetection, onSe
               center={[det.latitude, det.longitude]}
               radius={getMarkerRadius(det.frp, isSelected)}
               pathOptions={{
-                color: isSelected ? '#ffffff' : color,
-                fillColor: color,
-                fillOpacity: isSelected ? 0.95 : 0.7,
-                weight: isSelected ? 3 : 1.5
+                color: isSelected ? '#e6e9ef' : meta.hex,
+                fillColor: meta.hex,
+                fillOpacity: isSelected ? 0.95 : 0.65,
+                weight: isSelected ? 2.5 : 1.25
               }}
               eventHandlers={{
                 click: () => onSelectDetection && onSelectDetection(det)
               }}
             >
-              <Popup className="custom-leaflet-popup">
-                <div className="p-1 bg-slate-900 text-slate-100 rounded text-xs space-y-2 min-w-[200px]">
-                  <div className="flex items-center justify-between border-b border-slate-700 pb-1">
-                    <span className="font-bold text-orange-400">{det.id}</span>
-                    <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">
-                      {det.true_class ? det.true_class.replace(/_/g, ' ') : 'Anomaly'}
+              <Popup className="thermal-popup">
+                <div className="text-[12px] font-sans">
+                  <div className="flex items-center justify-between border-b border-line px-3 py-2">
+                    <span className="font-mono font-semibold text-ink-primary text-[11px]">{det.id}</span>
+                    <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 border border-line2 text-ink-secondary">
+                      {formatClassLabel(det.true_class)}
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-1 text-[11px] text-slate-300">
-                    <div><span className="text-slate-500">Lat/Lon:</span> {det.latitude.toFixed(2)}, {det.longitude.toFixed(2)}</div>
-                    <div><span className="text-slate-500">FRP:</span> <strong className="text-amber-400">{det.frp} MW</strong></div>
-                    <div><span className="text-slate-500">Confidence:</span> {det.confidence}%</div>
-                    <div><span className="text-slate-500">Near Facility:</span> {det.dist_to_industrial} km ({det.nearest_facility_type})</div>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 px-3 py-2 text-[11px]">
+                    <div className="text-ink-muted">lat/lon</div>
+                    <div className="font-mono text-ink-secondary text-right">{det.latitude.toFixed(2)}, {det.longitude.toFixed(2)}</div>
+                    <div className="text-ink-muted">FRP</div>
+                    <div className="font-mono text-accent text-right font-semibold">{det.frp} MW</div>
+                    <div className="text-ink-muted">confidence</div>
+                    <div className="font-mono text-ink-secondary text-right">{det.confidence}%</div>
+                    <div className="text-ink-muted">nearest facility</div>
+                    <div className="font-mono text-ink-secondary text-right">{det.dist_to_industrial} km</div>
                   </div>
 
                   <button
                     onClick={() => navigate(`/detections/${det.id}`)}
-                    className="w-full mt-2 py-1 px-2 bg-orange-600 hover:bg-orange-500 text-white font-medium rounded flex items-center justify-center gap-1 transition text-xs"
+                    className="w-full flex items-center justify-center gap-1.5 border-t border-line px-3 py-2 text-[11px] font-medium text-accent hover:bg-panel2 transition-colors"
                   >
-                    <span>Inspect Event Details</span>
-                    <ExternalLink className="w-3 h-3" />
+                    Inspect event
+                    <ArrowUpRight className="w-3 h-3" />
                   </button>
                 </div>
               </Popup>
@@ -95,34 +92,17 @@ export default function GeospatialMap({ detections = [], selectedDetection, onSe
         })}
       </MapContainer>
 
-      {/* Floating Interactive Map Legend */}
-      <div className="absolute bottom-4 left-4 z-[1000] bg-slate-900/90 backdrop-blur-md p-3 rounded-lg border border-slate-800 shadow-xl text-xs space-y-1.5 min-w-[210px]">
-        <div className="font-semibold text-slate-200 border-b border-slate-800 pb-1 flex items-center gap-1.5">
-          <Flame className="w-3.5 h-3.5 text-orange-400" />
-          <span>Thermal Classifications</span>
+      {/* Legend */}
+      <div className="absolute bottom-3 left-3 z-[1000] bg-panel/95 border border-line px-3 py-2.5 text-[11px] space-y-1.5 min-w-[190px]">
+        <div className="font-mono uppercase tracking-wider text-ink-muted text-[10px] border-b border-line pb-1.5 mb-1">
+          Classification
         </div>
-        <div className="space-y-1 pt-0.5">
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-red-500 inline-block shadow-sm"></span>
-            <span className="text-slate-300">Industrial Fire</span>
+        {Object.entries(CLASSIFICATIONS).map(([key, meta]) => (
+          <div key={key} className="flex items-center gap-2">
+            <span className="w-2 h-2 shrink-0" style={{ backgroundColor: meta.hex }} />
+            <span className="text-ink-secondary">{meta.label}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-orange-500 inline-block shadow-sm"></span>
-            <span className="text-slate-300">Persistent Thermal Source</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-yellow-500 inline-block shadow-sm"></span>
-            <span className="text-slate-300">Wildfire</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block shadow-sm"></span>
-            <span className="text-slate-300">Agricultural Burning</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-gray-500 inline-block shadow-sm"></span>
-            <span className="text-slate-300">Other Anomaly</span>
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   );

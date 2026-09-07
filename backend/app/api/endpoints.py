@@ -114,5 +114,7 @@ def get_model_status():
         supported_classes=meta.get("supported_classes", [
             "industrial_thermal_source", "industrial_fire", "wildfire", "agricultural_burning", "other_thermal_anomaly"
         ]),
-        feature_importances=meta.get("feature_importances", {})
+        feature_importances=meta.get("feature_importances", {}),
+        all_model_benchmarks=meta.get("all_model_benchmarks", {}),
+        split_method=meta.get("split_method")
     )

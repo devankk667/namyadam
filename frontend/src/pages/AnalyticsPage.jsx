@@ -4,18 +4,26 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
-  Tooltip,
+  Tooltip as RechartsTooltip,
+  CartesianGrid,
   PieChart,
   Pie,
-  Cell
+  Cell,
 } from 'recharts';
-import { BarChart3, Activity, PieChart as PieIcon, Layers, Flame } from 'lucide-react';
+import { Activity, PieChart as PieIcon, Layers, Flame } from 'lucide-react';
+import { Panel, PageHeader, StatusBadge, LoadingState, EmptyState } from '../components/ui';
+import { classificationMeta, formatClassLabel } from '../lib/classification';
 
-const COLORS = ['#ef4444', '#f97316', '#eab308', '#10b981', '#6b7280'];
+const CHART_TOOLTIP_STYLE = {
+  backgroundColor: '#0d1117',
+  borderColor: '#2a3341',
+  borderRadius: 2,
+  color: '#e6e9ef',
+  fontSize: 11,
+  fontFamily: 'ui-monospace, monospace',
+};
 
 export default function AnalyticsPage() {
   const [temporalData, setTemporalData] = useState([]);
@@ -39,7 +47,7 @@ export default function AnalyticsPage() {
         setRegionData(regRes || []);
         setPersistenceData(persRes || []);
       } catch (err) {
-        console.error("Analytics load error:", err);
+        console.error('Analytics load error:', err);
       } finally {
         setLoading(false);
       }
@@ -47,153 +55,137 @@ export default function AnalyticsPage() {
     loadAnalytics();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-96 space-y-4">
-        <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-slate-400 text-sm font-medium">Computing spatial-temporal metrics and regional persistence...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-orange-400" />
-            <span>Geospatial Analytics & Persistence Studio</span>
-          </h2>
-          <p className="text-sm text-slate-400 mt-1">
-            Temporal activity trends, classification distributions, and recurring industrial thermal source detection.
-          </p>
-        </div>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        title="Analytics & Persistence"
+        description="Temporal activity trends, classification distributions, and recurring industrial thermal source detection."
+      />
 
-      {/* Grid: Temporal Trends & Classification Distribution */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Temporal Observation Trend */}
-        <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl space-y-4">
-          <h3 className="font-bold text-white text-base border-b border-slate-800 pb-2 flex items-center gap-2">
-            <Activity className="w-5 h-5 text-orange-400" />
-            <span>Temporal Thermal Observation Trend</span>
-          </h3>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <Panel title="Temporal Observation Trend" eyebrow="analytics/temporal" icon={Activity}>
+          {loading ? (
+            <LoadingState label="computing temporal trend…" />
+          ) : temporalData.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={temporalData}>
+                  <defs>
+                    <linearGradient id="colorEvents" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#e3934a" stopOpacity={0.5} />
+                      <stop offset="95%" stopColor="#e3934a" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="#1e2530" vertical={false} />
+                  <XAxis dataKey="acq_date" stroke="#5f6b7a" fontSize={10} tickLine={false} axisLine={{ stroke: '#1e2530' }} />
+                  <YAxis stroke="#5f6b7a" fontSize={10} tickLine={false} axisLine={{ stroke: '#1e2530' }} />
+                  <RechartsTooltip contentStyle={CHART_TOOLTIP_STYLE} />
+                  <Area type="monotone" dataKey="total_events" stroke="#e3934a" strokeWidth={1.5} fillOpacity={1} fill="url(#colorEvents)" name="Total Events" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </Panel>
 
-          <div className="h-72 w-full pt-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={temporalData}>
-                <defs>
-                  <linearGradient id="colorEvents" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f97316" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#f97316" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="acq_date" stroke="#64748b" fontSize={11} />
-                <YAxis stroke="#64748b" fontSize={11} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', color: '#fff' }}
-                />
-                <Area type="monotone" dataKey="total_events" stroke="#f97316" fillOpacity={1} fill="url(#colorEvents)" name="Total Events" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Classification Breakdown */}
-        <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl space-y-4">
-          <h3 className="font-bold text-white text-base border-b border-slate-800 pb-2 flex items-center gap-2">
-            <PieIcon className="w-5 h-5 text-amber-400" />
-            <span>Thermal Classification Breakdown</span>
-          </h3>
-
-          <div className="h-72 w-full flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={classData}
-                  dataKey="count"
-                  nameKey="classification"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={90}
-                  label={({ classification, percentage }) => `${classification.replace(/_/g, ' ')} (${percentage}%)`}
-                  labelLine={false}
-                >
-                  {classData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', color: '#fff' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      {/* Persistence Analysis & Regional Table */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Regional Activity Breakdown */}
-        <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl space-y-4">
-          <h3 className="font-bold text-white text-base border-b border-slate-800 pb-2 flex items-center gap-2">
-            <Layers className="w-5 h-5 text-cyan-400" />
-            <span>Regional Industrial Thermal Density</span>
-          </h3>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-300">
-              <thead className="bg-slate-800 text-slate-400 uppercase font-mono border-b border-slate-700">
-                <tr>
-                  <th className="p-2.5">Region</th>
-                  <th className="p-2.5">Detections</th>
-                  <th className="p-2.5">Avg Persistence</th>
-                  <th className="p-2.5">High Risk</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800">
-                {regionData.map((reg, idx) => (
-                  <tr key={idx} className="hover:bg-slate-800/40">
-                    <td className="p-2.5 font-semibold text-slate-200">{reg.region}</td>
-                    <td className="p-2.5 text-slate-300">{reg.total_detections}</td>
-                    <td className="p-2.5 text-amber-400 font-bold">{(reg.avg_persistence * 100).toFixed(1)}%</td>
-                    <td className="p-2.5 text-red-400 font-bold">{reg.high_risk_count}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Top Persistent Thermal Clusters */}
-        <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl space-y-4">
-          <h3 className="font-bold text-white text-base border-b border-slate-800 pb-2 flex items-center gap-2">
-            <Flame className="w-5 h-5 text-orange-400" />
-            <span>Top Persistent Operational Flares / Sources</span>
-          </h3>
-
-          <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-1">
-            {persistenceData.slice(0, 8).map((pitem) => (
-              <div key={pitem.detection_id} className="bg-slate-800/70 border border-slate-700/70 p-3 rounded-xl flex items-center justify-between text-xs">
-                <div>
-                  <div className="font-bold text-slate-100">{pitem.region} ({pitem.detection_id})</div>
-                  <div className="text-[11px] text-slate-400 mt-0.5">
-                    Facility: <span className="text-orange-400 font-mono">{pitem.nearest_facility}</span> &bull; 30d Obs: {pitem.detection_count_30d}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-orange-500/20 text-orange-400 border border-orange-500/30">
-                    {pitem.status}
-                  </span>
-                  <div className="text-[10px] text-slate-400 mt-1 font-bold">
-                    {(pitem.persistence_score * 100).toFixed(0)}% persistence
-                  </div>
-                </div>
+        <Panel
+          title="Classification Breakdown"
+          eyebrow="analytics/classification"
+          icon={PieIcon}
+          className="h-full flex flex-col"
+          bodyClassName="flex-1 flex items-center"
+        >
+          {loading ? (
+            <LoadingState label="computing class distribution…" />
+          ) : classData.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center w-full">
+              <div className="h-56 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={classData} dataKey="count" nameKey="classification" cx="50%" cy="50%" outerRadius={80} innerRadius={44} strokeWidth={1} stroke="#090c10">
+                      {classData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={classificationMeta(entry.classification).hex} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip contentStyle={CHART_TOOLTIP_STYLE} />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
-            ))}
-          </div>
-        </div>
+              <div className="space-y-1.5">
+                {classData.map((entry, idx) => (
+                  <div key={idx} className="flex items-center justify-between text-[11px]">
+                    <span className="flex items-center gap-1.5 text-ink-secondary truncate">
+                      <span className="w-2 h-2 shrink-0" style={{ backgroundColor: classificationMeta(entry.classification).hex }} />
+                      {formatClassLabel(entry.classification)}
+                    </span>
+                    <span className="font-mono text-ink-primary">{entry.count} <span className="text-ink-muted">({entry.percentage}%)</span></span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </Panel>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <Panel title="Regional Industrial Thermal Density" eyebrow="analytics/regions" icon={Layers} noPadding>
+          {loading ? (
+            <LoadingState label="aggregating regional metrics…" />
+          ) : regionData.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-[12px] whitespace-nowrap">
+                <thead className="bg-panel2 text-ink-muted font-mono text-[10px] uppercase tracking-wide border-b border-line">
+                  <tr>
+                    <th className="px-3 py-2 font-medium">Region</th>
+                    <th className="px-3 py-2 font-medium">Detections</th>
+                    <th className="px-3 py-2 font-medium">Avg Persistence</th>
+                    <th className="px-3 py-2 font-medium">High Risk</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {regionData.map((reg, idx) => (
+                    <tr key={idx} className="hover:bg-panel2/50 transition-colors">
+                      <td className="px-3 py-2 font-medium text-ink-primary">{reg.region}</td>
+                      <td className="px-3 py-2 font-mono text-ink-secondary">{reg.total_detections}</td>
+                      <td className="px-3 py-2 font-mono text-status-warning">{(reg.avg_persistence * 100).toFixed(1)}%</td>
+                      <td className="px-3 py-2 font-mono text-status-critical">{reg.high_risk_count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Panel>
+
+        <Panel title="Top Persistent Operational Sources" eyebrow="analytics/persistence" icon={Flame} noPadding>
+          {loading ? (
+            <LoadingState label="ranking persistent clusters…" />
+          ) : persistenceData.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <div className="divide-y divide-line max-h-[300px] overflow-y-auto">
+              {persistenceData.slice(0, 8).map((pitem) => (
+                <div key={pitem.detection_id} className="flex items-center justify-between px-3 py-2.5 text-[12px]">
+                  <div className="min-w-0">
+                    <div className="font-medium text-ink-primary truncate">{pitem.region} <span className="text-ink-muted font-mono text-[11px]">({pitem.detection_id})</span></div>
+                    <div className="text-[10px] font-mono text-ink-muted mt-0.5">
+                      facility: <span className="text-accent">{pitem.nearest_facility}</span> · 30d obs: {pitem.detection_count_30d}
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0 ml-3">
+                    <StatusBadge status="accent" size="xs">{pitem.status}</StatusBadge>
+                    <div className="text-[10px] font-mono text-ink-muted mt-1">{(pitem.persistence_score * 100).toFixed(0)}%</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Panel>
       </div>
     </div>
   );

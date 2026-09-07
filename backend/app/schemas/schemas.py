@@ -88,3 +88,5 @@ class ModelStatus(BaseModel):
     test_samples: int
     supported_classes: List[str]
     feature_importances: Dict[str, float]
+    all_model_benchmarks: Dict[str, Dict[str, float]] = {}
+    split_method: Optional[str] = None

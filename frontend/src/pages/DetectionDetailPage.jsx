@@ -1,19 +1,59 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import GeospatialMap from '../components/GeospatialMap';
 import {
   ArrowLeft,
-  Flame,
-  Building2,
   MapPin,
   Clock,
-  Radio,
   Brain,
   ShieldAlert,
-  BarChart2,
-  Layers
+  Flame,
+  Building2,
+  GitCommitHorizontal,
 } from 'lucide-react';
+import {
+  Panel,
+  StatusBadge,
+  Tabs,
+  Disclosure,
+  JsonViewer,
+  ProbabilityBar,
+  CopyButton,
+  LoadingState,
+  ErrorState,
+  Metric,
+  KeyValueRow,
+} from '../components/ui';
+import { classificationMeta, formatClassLabel } from '../lib/classification';
+
+const FEATURE_GLOSSARY = {
+  frp: 'Fire Radiative Power (MW) — energy release rate; higher values indicate more intense combustion.',
+  dist_to_industrial: 'Straight-line distance to the nearest known industrial facility (OSM).',
+  persistence_score: 'Rolling likelihood that this location is a recurring, not transient, thermal source.',
+  brightness: 'Brightness temperature on the mid-infrared (I-4/T4) channel, in Kelvin.',
+  bright_t31: 'Brightness temperature on the thermal-infrared (T31) channel, in Kelvin.',
+  temp_difference: 'T4 − T31 — the spectral separation used to distinguish flaming combustion from background heat.',
+  confidence: 'Sensor-reported detection confidence for the raw thermal pixel.',
+  industrial_count_2km: 'Count of mapped industrial facilities within a 2km radius.',
+  industrial_count_5km: 'Count of mapped industrial facilities within a 5km radius.',
+  detection_count_30d: 'Number of thermal observations at this location in the trailing 30 days.',
+};
+
+function featureHelp(key) {
+  return FEATURE_GLOSSARY[key] || 'Model-derived input feature contributing to the classification decision.';
+}
+
+function humanizeFeature(key) {
+  return key.replace(/_/g, ' ');
+}
+
+const TABS = [
+  { id: 'analysis', label: 'Analysis' },
+  { id: 'technical', label: 'Technical Details' },
+  { id: 'diagnostics', label: 'Diagnostics' },
+  { id: 'history', label: 'History' },
+];
 
 export default function DetectionDetailPage() {
   const { id } = useParams();
@@ -22,10 +62,13 @@ export default function DetectionDetailPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('analysis');
+  const [evaluatedAt] = useState(() => new Date());
 
   useEffect(() => {
     async function loadDetail() {
       setLoading(true);
+      setError(null);
       try {
         const res = await api.getDetectionDetail(id);
         setData(res);
@@ -38,202 +81,324 @@ export default function DetectionDetailPage() {
     loadDetail();
   }, [id]);
 
+  const diagnostics = useMemo(() => {
+    if (!data) return null;
+    const { record, ml_prediction } = data;
+    const isHeuristic = ml_prediction?.model_version?.includes('fallback');
+    const warnings = [];
+
+    if (ml_prediction && ml_prediction.confidence < 0.7) {
+      warnings.push({
+        level: 'warning',
+        text: `Model confidence (${(ml_prediction.confidence * 100).toFixed(1)}%) is below the 70% acceptable-certainty threshold.`,
+      });
+    }
+    if (record.confidence < 70) {
+      warnings.push({
+        level: 'warning',
+        text: `Sensor detection confidence (${record.confidence}%) is below the high-certainty threshold used for automated alerting.`,
+      });
+    }
+    if (record.detection_count_30d < 3) {
+      warnings.push({
+        level: 'info',
+        text: `Limited historical window: only ${record.detection_count_30d} observation(s) in the trailing 30 days — persistence score may be unstable.`,
+      });
+    }
+    if (isHeuristic) {
+      warnings.push({
+        level: 'warning',
+        text: 'Inference served by the rule-based heuristic fallback, not a trained model artifact.',
+      });
+    }
+    if (warnings.length === 0) {
+      warnings.push({ level: 'success', text: 'No data-quality or confidence warnings triggered for this record.' });
+    }
+
+    return { isHeuristic, warnings };
+  }, [data]);
+
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-96 space-y-4">
-        <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-slate-400 text-sm font-medium">Fetching satellite observation & ML model analysis...</p>
+      <div className="space-y-4">
+        <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-ink-muted hover:text-ink-primary text-[11px] font-mono">
+          <ArrowLeft className="w-3.5 h-3.5" /> back
+        </button>
+        <Panel><LoadingState label={`fetching /api/detections/${id}…`} /></Panel>
       </div>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl text-center max-w-lg mx-auto my-12 space-y-4">
-        <ShieldAlert className="w-12 h-12 text-rose-500 mx-auto" />
-        <h3 className="text-lg font-bold text-white">Detection Record Not Found</h3>
-        <p className="text-sm text-slate-400">{error || `No record matching ID '${id}'`}</p>
-        <button
-          onClick={() => navigate('/')}
-          className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold rounded-lg transition"
-        >
-          Return to Dashboard
+      <div className="space-y-4 max-w-xl">
+        <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-ink-muted hover:text-ink-primary text-[11px] font-mono">
+          <ArrowLeft className="w-3.5 h-3.5" /> back
         </button>
+        <ErrorState
+          title="Detection record not found"
+          message={error || `No record matching ID '${id}'.`}
+          action={
+            <button
+              onClick={() => navigate('/')}
+              className="mt-2 px-3 py-1.5 bg-panel2 hover:bg-line border border-line text-[11px] font-mono text-ink-secondary"
+            >
+              return to console
+            </button>
+          }
+        />
       </div>
     );
   }
 
   const { record, ml_prediction } = data;
+  const meta = classificationMeta(record.true_class);
+  const tempDiff = (record.brightness - record.bright_t31).toFixed(1);
 
   return (
-    <div className="space-y-6">
-      {/* Top Header & Navigation */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center space-x-2 text-slate-400 hover:text-white text-xs font-medium transition"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Monitoring Dashboard</span>
+    <div className="space-y-5">
+      {/* Nav + record id */}
+      <div className="flex items-center justify-between">
+        <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-ink-muted hover:text-ink-primary text-[11px] font-mono transition-colors">
+          <ArrowLeft className="w-3.5 h-3.5" /> back to console
         </button>
-
-        <span className="text-xs font-mono text-slate-500">
-          EVENT RECORD ID: <strong className="text-orange-400">{record.id}</strong>
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-mono text-ink-muted">record id:</span>
+          <span className="text-[11px] font-mono text-ink-primary font-semibold">{record.id}</span>
+          <CopyButton value={record.id} />
+        </div>
       </div>
 
-      {/* Main Banner Header */}
-      <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center space-x-3">
-            <span className={`px-3 py-1 rounded-md text-xs font-mono font-bold uppercase ${
-              record.true_class === 'industrial_fire' ? 'bg-red-500/20 text-red-400 border border-red-500/40' :
-              record.true_class === 'industrial_thermal_source' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/40' :
-              'bg-amber-500/20 text-amber-400 border border-amber-500/40'
-            }`}>
-              {record.true_class ? record.true_class.replace(/_/g, ' ') : 'Thermal Anomaly'}
-            </span>
-            <span className="text-slate-400 text-xs flex items-center gap-1">
-              <MapPin className="w-3.5 h-3.5 text-slate-500" />
-              {record.region} ({record.latitude.toFixed(3)}, {record.longitude.toFixed(3)})
-            </span>
-          </div>
-          <h2 className="text-xl font-black text-white tracking-wide pt-1">
-            Observed {record.true_class ? record.true_class.replace(/_/g, ' ') : 'Thermal Anomaly'} Event
-          </h2>
-          <p className="text-xs text-slate-400 flex items-center gap-2">
-            <Clock className="w-3.5 h-3.5" />
-            Acquisition Timestamp: {record.acq_date} at {record.acq_time} UTC via {record.satellite} ({record.instrument})
-          </p>
-        </div>
-
-        {ml_prediction && (
-          <div className="bg-slate-800/90 border border-slate-700/80 p-3.5 rounded-xl text-center min-w-[200px]">
-            <div className="text-[11px] text-slate-400 font-medium">Model Classification Confidence</div>
-            <div className="text-2xl font-black text-orange-400 mt-0.5">
-              {(ml_prediction.confidence * 100).toFixed(1)}%
+      {/* Header */}
+      <div className="border border-line bg-panel">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-4 py-3.5 border-b border-line">
+          <div className="space-y-1.5 min-w-0">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <StatusBadge status={meta.status}>{meta.label}</StatusBadge>
+              <span className="text-ink-muted text-[11px] flex items-center gap-1 font-mono">
+                <MapPin className="w-3 h-3" />
+                {record.region} ({record.latitude.toFixed(3)}, {record.longitude.toFixed(3)})
+              </span>
             </div>
-            <div className="text-[10px] text-slate-500 mt-0.5">
-              Version {ml_prediction.model_version}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Main Grid: Metrics, Spatial Context & ML Explanation */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Physical & Spatial Attributes Column */}
-        <div className="space-y-6">
-          {/* Thermal Physical Features */}
-          <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl space-y-4">
-            <h3 className="font-bold text-white text-sm border-b border-slate-800 pb-2 flex items-center gap-2">
-              <Flame className="w-4 h-4 text-orange-400" />
-              <span>Thermal Physical Characteristics</span>
-            </h3>
-
-            <div className="grid grid-cols-2 gap-4 text-xs">
-              <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/60">
-                <div className="text-slate-400 font-medium">Fire Radiative Power</div>
-                <div className="text-lg font-black text-amber-400 mt-1">{record.frp} MW</div>
-              </div>
-
-              <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/60">
-                <div className="text-slate-400 font-medium">Detection Confidence</div>
-                <div className="text-lg font-black text-emerald-400 mt-1">{record.confidence}%</div>
-              </div>
-
-              <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/60">
-                <div className="text-slate-400 font-medium">Brightness Temp (I-4)</div>
-                <div className="text-base font-bold text-slate-200 mt-1">{record.brightness} K</div>
-              </div>
-
-              <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/60">
-                <div className="text-slate-400 font-medium">Brightness Temp (T31)</div>
-                <div className="text-base font-bold text-slate-200 mt-1">{record.bright_t31} K</div>
-              </div>
-            </div>
+            <h1 className="text-[15px] font-semibold text-ink-primary tracking-tight capitalize">
+              {formatClassLabel(record.true_class)} event
+            </h1>
+            <p className="text-[11px] text-ink-muted flex items-center gap-1.5 font-mono">
+              <Clock className="w-3 h-3" />
+              {record.acq_date} {record.acq_time} UTC · {record.satellite} / {record.instrument}
+            </p>
           </div>
 
-          {/* Spatial Context (OSM Context) */}
-          <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl space-y-4">
-            <h3 className="font-bold text-white text-sm border-b border-slate-800 pb-2 flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-cyan-400" />
-              <span>Geospatial Context (OSM)</span>
-            </h3>
-
-            <div className="space-y-3 text-xs">
-              <div className="flex justify-between items-center bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/60">
-                <span className="text-slate-400">Nearest Industrial Facility:</span>
-                <span className="font-bold text-slate-200">{record.dist_to_industrial} km</span>
-              </div>
-
-              <div className="flex justify-between items-center bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/60">
-                <span className="text-slate-400">Facility Type:</span>
-                <span className="font-mono text-orange-400 uppercase font-semibold">{record.nearest_facility_type}</span>
-              </div>
-
-              <div className="flex justify-between items-center bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/60">
-                <span className="text-slate-400">Industrial Count (2 km / 5 km):</span>
-                <span className="font-bold text-slate-200">{record.industrial_count_2km} / {record.industrial_count_5km}</span>
-              </div>
-
-              <div className="flex justify-between items-center bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/60">
-                <span className="text-slate-400">Historical Persistence Score:</span>
-                <span className="font-bold text-amber-400">{(record.persistence_score * 100).toFixed(1)}%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ML Model Explanation & Class Probabilities Column */}
-        <div className="lg:col-span-2 space-y-6">
           {ml_prediction && (
-            <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl space-y-4">
-              <h3 className="font-bold text-white text-sm border-b border-slate-800 pb-2 flex items-center gap-2">
-                <Brain className="w-4 h-4 text-orange-400" />
-                <span>Machine Learning Explanation & Class Probabilities</span>
-              </h3>
-
-              <div className="bg-slate-800/80 border border-slate-700/80 p-4 rounded-xl text-xs space-y-2">
-                <p className="text-slate-200 leading-relaxed">{ml_prediction.explanation.summary}</p>
-              </div>
-
-              <div className="space-y-2 pt-2">
-                <div className="text-xs text-slate-400 font-medium mb-1">Model Multi-Class Probability Distribution</div>
-                {Object.entries(ml_prediction.class_probabilities).map(([clsName, prob]) => (
-                  <div key={clsName} className="space-y-1">
-                    <div className="flex justify-between text-xs text-slate-300">
-                      <span className="capitalize font-mono">{clsName.replace(/_/g, ' ')}</span>
-                      <span className="font-bold">{(prob * 100).toFixed(1)}%</span>
-                    </div>
-                    <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-700">
-                      <div
-                        className={`h-2 rounded-full ${
-                          clsName === ml_prediction.predicted_class ? 'bg-orange-500' : 'bg-slate-600'
-                        }`}
-                        style={{ width: `${prob * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div className="flex divide-x divide-line border border-line shrink-0">
+              <Metric label="Model Confidence" value={`${(ml_prediction.confidence * 100).toFixed(1)}%`} tone="accent" caption={`v${ml_prediction.model_version}`} />
+              <Metric label="Predicted Class" value={formatClassLabel(ml_prediction.predicted_class)} mono={false} caption="argmax(P)" />
             </div>
           )}
+        </div>
 
-          {/* Event Map View */}
-          <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl space-y-4">
-            <h3 className="font-bold text-white text-sm border-b border-slate-800 pb-2 flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-orange-400" />
-              <span>Event Geographic Location</span>
-            </h3>
-
-            <GeospatialMap
-              detections={[record]}
-              selectedDetection={record}
-            />
-          </div>
+        {/* Quick metric strip */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-line">
+          <Metric label="FRP" value={`${record.frp} MW`} tone="accent" help={featureHelp('frp')} />
+          <Metric label="Sensor Confidence" value={`${record.confidence}%`} help={featureHelp('confidence')} />
+          <Metric label="Persistence" value={`${(record.persistence_score * 100).toFixed(0)}%`} tone="warning" help={featureHelp('persistence_score')} />
+          <Metric label="Dist. to Industrial" value={`${record.dist_to_industrial} km`} help={featureHelp('dist_to_industrial')} />
         </div>
       </div>
+
+      {/* Tabs */}
+      <Tabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
+
+      {activeTab === 'analysis' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <div className="lg:col-span-2 space-y-5">
+            {ml_prediction && (
+              <Panel title="Model Explanation" eyebrow="why this result" icon={Brain}>
+                <p className="text-[12px] text-ink-secondary leading-relaxed border-l-2 border-accent/50 pl-3">
+                  {ml_prediction.explanation.summary}
+                </p>
+
+                <div className="mt-4">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-ink-muted mb-2">
+                    Top Contributing Factors
+                  </div>
+                  <div className="space-y-2.5">
+                    {Object.entries(ml_prediction.explanation.top_contributing_features).map(([fname, weight]) => (
+                      <div key={fname} className="flex items-start gap-2">
+                        <div className="flex-1">
+                          <ProbabilityBar label={humanizeFeature(fname)} value={weight} highlighted />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-ink-muted mt-2">
+                    {Object.keys(ml_prediction.explanation.top_contributing_features)
+                      .map((k) => `${humanizeFeature(k)} — ${featureHelp(k)}`)
+                      .join('  ·  ')}
+                  </p>
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-line">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-ink-muted mb-2">
+                    Class Probability Distribution
+                  </div>
+                  <div className="space-y-2">
+                    {Object.entries(ml_prediction.class_probabilities)
+                      .sort((a, b) => b[1] - a[1])
+                      .map(([cls, prob]) => (
+                        <ProbabilityBar
+                          key={cls}
+                          label={formatClassLabel(cls)}
+                          value={prob}
+                          highlighted={cls === ml_prediction.predicted_class}
+                        />
+                      ))}
+                  </div>
+                </div>
+              </Panel>
+            )}
+
+            <Panel title="Event Location" eyebrow="geospatial" icon={MapPin} noPadding>
+              <GeospatialMap detections={[record]} selectedDetection={record} height="380px" />
+            </Panel>
+          </div>
+
+          <div className="space-y-5">
+            <Panel title="Thermal Characteristics" eyebrow="physical" icon={Flame}>
+              <KeyValueRow label="Fire Radiative Power" value={`${record.frp} MW`} mono tone="accent" help={featureHelp('frp')} />
+              <KeyValueRow label="Brightness (I-4/T4)" value={`${record.brightness} K`} mono />
+              <KeyValueRow label="Brightness (T31)" value={`${record.bright_t31} K`} mono />
+              <KeyValueRow label="Spectral difference (T4−T31)" value={`${tempDiff} K`} mono help={featureHelp('temp_difference')} />
+              <KeyValueRow label="Day / Night" value={record.daynight === 'D' ? 'Day' : 'Night'} />
+            </Panel>
+
+            <Panel title="Spatial Context" eyebrow="OSM enrichment" icon={Building2}>
+              <KeyValueRow label="Nearest facility" value={`${record.dist_to_industrial} km`} mono help={featureHelp('dist_to_industrial')} />
+              <KeyValueRow label="Facility type" value={record.nearest_facility_type} mono tone="accent" />
+              <KeyValueRow label="Facilities (2km / 5km)" value={`${record.industrial_count_2km} / ${record.industrial_count_5km}`} mono />
+              <KeyValueRow label="Persistence score" value={`${(record.persistence_score * 100).toFixed(1)}%`} mono tone="warning" help={featureHelp('persistence_score')} />
+              <KeyValueRow label="30-day observations" value={record.detection_count_30d} mono help={featureHelp('detection_count_30d')} />
+            </Panel>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'technical' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="space-y-5">
+            <Panel title="Input Parameters" eyebrow="model input vector">
+              <KeyValueRow label="brightness" value={record.brightness} mono />
+              <KeyValueRow label="bright_t31" value={record.bright_t31} mono />
+              <KeyValueRow label="frp" value={record.frp} mono />
+              <KeyValueRow label="confidence" value={record.confidence} mono />
+              <KeyValueRow label="dist_to_industrial" value={record.dist_to_industrial} mono />
+              <KeyValueRow label="industrial_count_2km" value={record.industrial_count_2km} mono />
+              <KeyValueRow label="industrial_count_5km" value={record.industrial_count_5km} mono />
+              <KeyValueRow label="nearest_facility_type" value={record.nearest_facility_type} mono />
+              <KeyValueRow label="persistence_score" value={record.persistence_score} mono />
+              <KeyValueRow label="detection_count_30d" value={record.detection_count_30d} mono />
+              <KeyValueRow label="daynight" value={record.daynight} mono />
+            </Panel>
+
+            <Panel title="Model / Version Metadata" eyebrow="configuration">
+              <KeyValueRow label="model_version" value={ml_prediction?.model_version || 'n/a'} mono />
+              <KeyValueRow
+                label="inference mode"
+                value={ml_prediction?.model_version?.includes('fallback') ? 'heuristic fallback' : 'trained artifact'}
+                mono
+                tone={ml_prediction?.model_version?.includes('fallback') ? 'warning' : 'success'}
+              />
+              <KeyValueRow label="supported classes" value={Object.keys(ml_prediction?.class_probabilities || {}).length} mono />
+              <KeyValueRow label="satellite / instrument" value={`${record.satellite} / ${record.instrument}`} mono />
+            </Panel>
+          </div>
+
+          <div className="space-y-5">
+            <Disclosure title="detection.json" eyebrow="raw record" mono defaultOpen>
+              <JsonViewer data={record} title="record" />
+            </Disclosure>
+            <Disclosure title="prediction.json" eyebrow="raw model output" mono>
+              <JsonViewer data={ml_prediction} title="ml_prediction" />
+            </Disclosure>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'diagnostics' && diagnostics && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <Panel title="Warnings & Data Quality" eyebrow="derived checks" icon={ShieldAlert}>
+            <div className="space-y-2">
+              {diagnostics.warnings.map((w, i) => (
+                <div key={i} className="flex items-start gap-2 py-1.5 border-b border-line/70 last:border-b-0">
+                  <StatusBadge status={w.level === 'success' ? 'success' : w.level === 'warning' ? 'warning' : 'info'} size="xs">
+                    {w.level}
+                  </StatusBadge>
+                  <span className="text-[12px] text-ink-secondary">{w.text}</span>
+                </div>
+              ))}
+            </div>
+          </Panel>
+
+          <Panel title="Inference Performance" eyebrow="runtime metadata">
+            <KeyValueRow label="Model mode" value={diagnostics.isHeuristic ? 'HEURISTIC' : 'TRAINED ARTIFACT'} mono tone={diagnostics.isHeuristic ? 'warning' : 'success'} />
+            <KeyValueRow label="Evaluated at (client)" value={evaluatedAt.toISOString()} mono />
+            <KeyValueRow label="Endpoint" value={`GET /api/detections/${record.id}`} mono />
+            <KeyValueRow label="Response fields" value={Object.keys(record).length + (ml_prediction ? Object.keys(ml_prediction).length : 0)} mono />
+          </Panel>
+        </div>
+      )}
+
+      {activeTab === 'history' && (
+        <Panel title="Event Trace" eyebrow="observation timeline" icon={GitCommitHorizontal}>
+          <div className="space-y-0">
+            <div className="flex gap-3 pb-4 relative">
+              <div className="flex flex-col items-center">
+                <span className="w-2 h-2 rounded-full bg-status-info mt-1" />
+                <span className="w-px flex-1 bg-line" />
+              </div>
+              <div className="pb-2">
+                <div className="text-[11px] font-mono text-ink-muted">{record.acq_date} {record.acq_time} UTC</div>
+                <div className="text-[12px] text-ink-primary font-medium">Satellite acquisition</div>
+                <p className="text-[11px] text-ink-secondary mt-0.5">
+                  Thermal pixel captured by {record.satellite} ({record.instrument}) and ingested as record {record.id}.
+                </p>
+              </div>
+            </div>
+
+            {record.persistence_score >= 0.5 && (
+              <div className="flex gap-3 pb-4">
+                <div className="flex flex-col items-center">
+                  <span className="w-2 h-2 rounded-full bg-status-warning mt-1" />
+                  <span className="w-px flex-1 bg-line" />
+                </div>
+                <div className="pb-2">
+                  <div className="text-[11px] font-mono text-ink-muted">rolling 30-day window</div>
+                  <div className="text-[12px] text-ink-primary font-medium">Recurring pattern detected</div>
+                  <p className="text-[11px] text-ink-secondary mt-0.5">
+                    {record.detection_count_30d} observation(s) at this location in the trailing 30 days, yielding a
+                    persistence score of {(record.persistence_score * 100).toFixed(1)}%.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <div className="flex flex-col items-center">
+                <span className="w-2 h-2 rounded-full bg-ink-muted mt-1" />
+              </div>
+              <div>
+                <div className="text-[12px] text-ink-secondary">
+                  Region-level persistence trends for <strong className="text-ink-primary">{record.region}</strong> are
+                  available in{' '}
+                  <button onClick={() => navigate('/analytics')} className="text-accent hover:underline">
+                    Analytics & Persistence
+                  </button>.
+                </div>
+              </div>
+            </div>
+          </div>
+        </Panel>
+      )}
     </div>
   );
 }
