@@ -1,0 +1,28 @@
+{
+  "firms_input": "data/processed/firms_noaa20_sp_bbox_68_8_97_37_2024-06-01_to_2026-05-31.csv",
+  "osm_features_cached": 71326,
+  "total_records": 1891825,
+  "matched_5km": 257890,
+  "no_osm_within_5km": 1633935,
+  "median_nearest_km": 23.621,
+  "mean_nearest_km": 87.939,
+  "p90_nearest_km": 325.691,
+  "firms_with_power_plant_5km": 150457,
+  "firms_with_quarry_5km": 7465,
+  "firms_with_flare_5km": 1028,
+  "firms_with_petrowell_5km": 329,
+  "firms_landuse_nearby": 8331,
+  "nearest_type_top": {
+    "power:generator": 757839,
+    "man_made:chimney": 402943,
+    "power:plant": 378898,
+    "man_made:works": 165265,
+    "man_made:storage_tank": 113122,
+    "landuse:quarry": 20119,
+    "man_made:petroleum_well": 17087,
+    "landuse:industrial": 15342,
+    "industrial:slaughterhouse": 3840,
+    "man_made:mineshaft": 3005
+  },
+  "note": "label=UNKNOWN everywhere. OSM context describes surroundings, never the cause."
+}

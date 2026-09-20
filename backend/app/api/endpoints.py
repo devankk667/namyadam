@@ -106,11 +106,11 @@ def get_model_status():
     metrics = meta.get("metrics", {})
     return ModelStatus(
         model_loaded=model_service.is_loaded,
-        model_name=meta.get("model_name", "Random Forest Baseline"),
-        model_version=meta.get("version", "1.0.0"),
-        macro_f1=metrics.get("macro_f1", 0.9725),
-        train_samples=meta.get("train_samples", 872),
-        test_samples=meta.get("test_samples", 327),
+        model_name=meta.get("model_name", "unloaded"),
+        model_version=meta.get("version", "0.0.0"),
+        macro_f1=metrics.get("macro_f1", 0.0),
+        train_samples=meta.get("train_samples", 0),
+        test_samples=meta.get("test_samples", 0),
         supported_classes=meta.get("supported_classes", [
             "industrial_thermal_source", "industrial_fire", "wildfire", "agricultural_burning", "other_thermal_anomaly"
         ]),

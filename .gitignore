@@ -38,6 +38,11 @@ ml/models/*
 !ml/models/.gitkeep
 data/raw/*
 !data/raw/.gitkeep
+!data/raw/osm/
+data/raw/osm/*
+!data/raw/osm/.gitkeep
+data/raw/osm_pbf/
+!data/raw/osm_pbf/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
 data/external/*

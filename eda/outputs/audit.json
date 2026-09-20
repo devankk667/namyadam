@@ -1,0 +1,99 @@
+{
+  "rows": 1891825,
+  "date_min": "2024-06-01 00:00:00",
+  "date_max": "2026-05-31 00:00:00",
+  "n_dates": 730,
+  "expected_days": 730,
+  "missing_days": 0,
+  "lat_min": 8.00001,
+  "lat_max": 36.99977,
+  "lon_min": 68.0,
+  "lon_max": 96.99998,
+  "bad_lat": 0,
+  "bad_lon": 0,
+  "outside_bbox": 0,
+  "bad_date": 0,
+  "neg_frp": 0,
+  "ti4_gt_ti5_frac": 0.9986959681788748,
+  "scan_le0": 0,
+  "track_le0": 0,
+  "missing_pct": {},
+  "frp": {
+    "min": 0.0,
+    "max": 1230.11,
+    "mean": 6.546,
+    "median": 3.59,
+    "std": 15.764,
+    "q1": 1.93,
+    "q3": 6.39,
+    "p95": 17.83,
+    "p99": 59.44
+  },
+  "bright_ti4": {
+    "min": 207.93,
+    "max": 367.0,
+    "median": 335.22,
+    "mean": 331.519,
+    "p99": 367.0
+  },
+  "bright_ti5": {
+    "min": 242.43,
+    "max": 380.83,
+    "median": 301.82,
+    "mean": 301.284,
+    "p99": 322.94
+  },
+  "temp_diff": {
+    "min": -117.02,
+    "max": 104.46,
+    "median": 30.34,
+    "mean": 30.235,
+    "p99": 65.24
+  },
+  "scan": {
+    "min": 0.32,
+    "max": 0.8,
+    "median": 0.43,
+    "mean": 0.453,
+    "p99": 0.73
+  },
+  "track": {
+    "min": 0.36,
+    "max": 0.78,
+    "median": 0.43,
+    "mean": 0.469,
+    "p99": 0.76
+  },
+  "confidence": {
+    "n": 1519882,
+    "l": 322406,
+    "h": 49537
+  },
+  "daynight": {
+    "D": 1357525,
+    "N": 534300
+  },
+  "version": {
+    "2": 1891825
+  },
+  "satellite": {
+    "N20": 1891825
+  },
+  "exact_dup_rows": 0,
+  "eventkey_dup_rows": 1,
+  "missing_day_list": [],
+  "missing_day_total": 0,
+  "persist_cells": 794698,
+  "persist_days_describe": {
+    "count": 794698.0,
+    "mean": 1.79,
+    "std": 6.17,
+    "min": 1.0,
+    "25%": 1.0,
+    "50%": 1.0,
+    "75%": 2.0,
+    "max": 546.0
+  },
+  "persist_ge10days_cells": 1869,
+  "persist_ge30days_cells": 995
+}

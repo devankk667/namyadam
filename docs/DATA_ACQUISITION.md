@@ -51,6 +51,27 @@ This document outlines the data sources, access protocols, field definitions, sp
   - `industrial_count_5km`: Number of industrial entities within a 5.0 km radius.
   - `nearest_facility_type`: Categorical label of nearest facility (e.g., `refinery`, `power_plant`, `chemical`, `steel_works`, `none`).
 
+### Tiled Offline Cache (do NOT query per FIRMS point)
+
+- **Script**: `ml/scripts/download_osm.py` — downloads once, trains from cache forever.
+- **Layout**: India bbox → 4 disjoint region columns → 2×2° sub-tiles (auto-split to 1°/0.5° on timeout) → Overpass (sequential + sleep, retries, fallback host, server-timeout `remark` treated as failure, never checkpointed).
+- **Cache**: `data/raw/osm/{west,central,east,north_east}_india.parquet` + `.metadata.json` (git-ignored, local only); checkpoints in `data/raw/osm/_checkpoints/` make runs resumable.
+- **Tag scope**: `industrial=*`, `landuse=industrial|quarry`, `power=plant|generator`, listed `man_made=*` (works/chimney/flare/petroleum_well/mineshaft/gasometer/storage_tank). Excluded: `power=pole|tower|line|substation`, `man_made=pipeline`, `building=industrial`, relations (see script header for rationale).
+- **Usage**: `python ml/scripts/download_osm.py` (full, ~240 tiles, hours — run overnight) · `--dry-run` to preview · `--region X --limit-tiles N` to test.
+- **Validated**: 2026-09-15, 1° Ahmedabad tile → 375 rows (GIDC Vatva, chimney clusters).
+
+### Bulk Method — Geofabrik PBFs (used for the full cache; Overpass kept as fallback)
+
+- Public Overpass hosts were persistently 429/504-overloaded, so the full cache
+  was built from Geofabrik India zone PBFs (6 zones, ~1.6 GB, 2026-09-14 data)
+  via `ml/scripts/build_osm_cache_geofabrik.py` (pyogrio/GDAL, tag scope identical
+  to the Overpass script, polygons/lines → centroids, same Parquet schema).
+- Raw PBFs live in `data/raw/osm_pbf/` (git-ignored). Output merged with the
+  Overpass cache by `(osm_type, osm_id)` → **71,325 unique features**
+  (west 26,893 / central 39,666 / east 3,313 / NE 1,453).
+- Caveats: east/NE are thinly mapped in OSM; `power=generator` micro-units
+  dominate nearest-type counts; ways remain centroid-reduced (see enrichment QA).
+
 ---
 
 ## 3. Satellite Optical & Infrared Imagery

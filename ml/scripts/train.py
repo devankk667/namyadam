@@ -19,13 +19,23 @@ from xgboost import XGBClassifier
 from sklearn.model_selection import GroupShuffleSplit
 from sklearn.metrics import classification_report, f1_score, precision_score, recall_score, roc_auc_score, confusion_matrix
 
-from preprocessing import prepare_features, TARGET_CLASSES
-from pytorch_model import MultimodalThermalNet
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+
+try:
+    from preprocessing import prepare_features, TARGET_CLASSES
+    from pytorch_model import MultimodalThermalNet
+except ImportError:
+    from ml.src.preprocessing import prepare_features, TARGET_CLASSES
+    from ml.src.pytorch_model import MultimodalThermalNet
 
 def train_and_evaluate():
     data_path = "data/processed/thermal_detections_processed.csv"
     if not os.path.exists(data_path):
-        from generate_demo_data import main as gen_main
+        try:
+            from generate_demo_data import main as gen_main
+        except ImportError:
+            from ml.scripts.generate_demo_data import main as gen_main
         gen_main()
 
     df = pd.read_csv(data_path)
