@@ -37,12 +37,17 @@ CONF_ORD = {"l": 0, "n": 1, "h": 2}
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--min-conf", default="medium", choices=["high", "medium"])
+    ap.add_argument("--min-conf", default="medium", choices=["high", "medium", "low"])
     ap.add_argument("--test-size", type=float, default=0.25)
     ap.add_argument("--seed", type=int, default=42)
     args = ap.parse_args()
 
-    keep_conf = ["high"] if args.min_conf == "high" else ["high", "medium"]
+    if args.min_conf == "high":
+        keep_conf = ["high"]
+    elif args.min_conf == "medium":
+        keep_conf = ["high", "medium"]
+    else:  # low — include everything non-unknown
+        keep_conf = ["high", "medium", "low"]
     labels = pd.read_parquet(LABELS)
     good = labels[(labels["label"] != "unknown") & (labels["label_confidence"].isin(keep_conf))]
     print(f"labeled events (>{args.min_conf}): {len(good)}", flush=True)

@@ -21,6 +21,7 @@
     11
   ],
   "osm_files": [
+    "data/raw/osm\\_partial_west_india.parquet",
     "data/raw/osm\\central_india.parquet",
     "data/raw/osm\\east_india.parquet",
     "data/raw/osm\\north_east_india.parquet",
@@ -28,15 +29,15 @@
   ],
   "n_events": 1110501,
   "label_x_conf": {
-    "agricultural_burning/low": 18046,
+    "agricultural_burning/low": 18044,
     "agricultural_burning/medium": 90,
     "gas_flare/high": 1,
     "gas_flare/medium": 7,
     "industrial_fire/low": 602,
     "industrial_fire/medium": 83,
-    "mining_activity/high": 30,
-    "mining_activity/medium": 70,
-    "unknown/": 1091572
+    "mining_activity/high": 34,
+    "mining_activity/medium": 85,
+    "unknown/": 1091555
   },
   "wildfire_labels": 0,
   "wildfire_note": "pending vegetation/forest mask",
