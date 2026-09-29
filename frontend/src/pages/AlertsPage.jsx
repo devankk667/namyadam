@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { ArrowUpRight, ChevronRight, ChevronLeft } from 'lucide-react';
-import { Panel, PageHeader, StatusBadge, LoadingState, EmptyState } from '../components/ui';
+import { Panel, PageHeader, StatusBadge, LoadingState, EmptyState, ErrorState } from '../components/ui';
 import { severityStatus } from '../lib/classification';
 
 const SEVERITIES = ['ALL', 'CRITICAL', 'HIGH', 'MEDIUM'];
@@ -12,24 +12,28 @@ export default function AlertsPage() {
   const navigate = useNavigate();
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [severityFilter, setSeverityFilter] = useState('ALL');
   const [expandedId, setExpandedId] = useState(null);
   const [page, setPage] = useState(1);
 
-  useEffect(() => {
-    async function loadAlerts() {
-      setLoading(true);
-      try {
-        const res = await api.getAlerts();
-        setAlerts(res || []);
-      } catch (err) {
-        console.error('Alerts load error:', err);
-      } finally {
-        setLoading(false);
-      }
+  const loadAlerts = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.getAlerts();
+      setAlerts(Array.isArray(res) ? res : []);
+    } catch (err) {
+      setError(err.message || 'Alerts could not be loaded.');
+      console.error('Alerts load error:', err);
+    } finally {
+      setLoading(false);
     }
-    loadAlerts();
   }, []);
+
+  useEffect(() => {
+    loadAlerts();
+  }, [loadAlerts]);
 
   useEffect(() => {
     setPage(1);
@@ -76,6 +80,8 @@ export default function AlertsPage() {
       >
         {loading ? (
           <LoadingState label="evaluating risk rules…" />
+        ) : error ? (
+          <ErrorState title="Alerts unavailable" message={error} action={<button onClick={loadAlerts} className="mt-2 px-3 py-1.5 border border-line text-[11px]">Retry</button>} />
         ) : filteredAlerts.length === 0 ? (
           <EmptyState message={`No active alerts matching filter '${severityFilter}'.`} />
         ) : (

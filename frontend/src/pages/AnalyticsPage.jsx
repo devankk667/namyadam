@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../services/api';
 import {
   ResponsiveContainer,
@@ -13,7 +13,7 @@ import {
   Cell,
 } from 'recharts';
 import { Activity, PieChart as PieIcon, Layers, Flame } from 'lucide-react';
-import { Panel, PageHeader, StatusBadge, LoadingState, EmptyState } from '../components/ui';
+import { Panel, PageHeader, StatusBadge, LoadingState, EmptyState, ErrorState } from '../components/ui';
 import { classificationMeta, formatClassLabel } from '../lib/classification';
 
 const CHART_TOOLTIP_STYLE = {
@@ -30,30 +30,37 @@ export default function AnalyticsPage() {
   const [classData, setClassData] = useState([]);
   const [regionData, setRegionData] = useState([]);
   const [persistenceData, setPersistenceData] = useState([]);
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadAnalytics() {
-      setLoading(true);
-      try {
-        const [tempRes, classRes, regRes, persRes] = await Promise.all([
-          api.getAnalyticsTemporal(),
-          api.getAnalyticsClassification(),
-          api.getAnalyticsRegions(),
-          api.getAnalyticsPersistence()
-        ]);
-        setTemporalData(tempRes || []);
-        setClassData(classRes || []);
-        setRegionData(regRes || []);
-        setPersistenceData(persRes || []);
-      } catch (err) {
-        console.error('Analytics load error:', err);
-      } finally {
-        setLoading(false);
-      }
+  const loadAnalytics = useCallback(async () => {
+    setLoading(true);
+    const nextErrors = {};
+    const requests = [
+      ['temporal', api.getAnalyticsTemporal, setTemporalData],
+      ['classification', api.getAnalyticsClassification, setClassData],
+      ['regions', api.getAnalyticsRegions, setRegionData],
+      ['persistence', api.getAnalyticsPersistence, setPersistenceData],
+    ];
+    try {
+      await Promise.all(requests.map(async ([name, request, setData]) => {
+        try {
+          const data = await request();
+          setData(Array.isArray(data) ? data : []);
+        } catch (err) {
+          nextErrors[name] = err.message || 'Request failed';
+          console.error(`Analytics ${name} load error:`, err);
+        }
+      }));
+      setErrors(nextErrors);
+    } finally {
+      setLoading(false);
     }
-    loadAnalytics();
   }, []);
+
+  useEffect(() => {
+    loadAnalytics();
+  }, [loadAnalytics]);
 
   return (
     <div className="space-y-5">
@@ -66,6 +73,8 @@ export default function AnalyticsPage() {
         <Panel title="Temporal Observation Trend" eyebrow="analytics/temporal" icon={Activity}>
           {loading ? (
             <LoadingState label="computing temporal trend…" />
+          ) : errors.temporal ? (
+            <ErrorState message={errors.temporal} action={<button onClick={loadAnalytics} className="mt-2 px-3 py-1.5 border border-line text-[11px]">Retry</button>} />
           ) : temporalData.length === 0 ? (
             <EmptyState />
           ) : (
@@ -98,6 +107,8 @@ export default function AnalyticsPage() {
         >
           {loading ? (
             <LoadingState label="computing class distribution…" />
+          ) : errors.classification ? (
+            <ErrorState message={errors.classification} action={<button onClick={loadAnalytics} className="mt-2 px-3 py-1.5 border border-line text-[11px]">Retry</button>} />
           ) : classData.length === 0 ? (
             <EmptyState />
           ) : (
@@ -134,6 +145,8 @@ export default function AnalyticsPage() {
         <Panel title="Regional Industrial Thermal Density" eyebrow="analytics/regions" icon={Layers} noPadding>
           {loading ? (
             <LoadingState label="aggregating regional metrics…" />
+          ) : errors.regions ? (
+            <ErrorState message={errors.regions} action={<button onClick={loadAnalytics} className="mt-2 px-3 py-1.5 border border-line text-[11px]">Retry</button>} />
           ) : regionData.length === 0 ? (
             <EmptyState />
           ) : (
@@ -165,6 +178,8 @@ export default function AnalyticsPage() {
         <Panel title="Top Persistent Operational Sources" eyebrow="analytics/persistence" icon={Flame} noPadding>
           {loading ? (
             <LoadingState label="ranking persistent clusters…" />
+          ) : errors.persistence ? (
+            <ErrorState message={errors.persistence} action={<button onClick={loadAnalytics} className="mt-2 px-3 py-1.5 border border-line text-[11px]">Retry</button>} />
           ) : persistenceData.length === 0 ? (
             <EmptyState />
           ) : (

@@ -4,6 +4,8 @@
 export const CLASSIFICATIONS = {
   industrial_fire: { label: 'Industrial Fire', hex: '#f85149', status: 'critical' },
   industrial_thermal_source: { label: 'Persistent Thermal Source', hex: '#e3934a', status: 'accent' },
+  gas_flare: { label: 'Gas Flare', hex: '#e3934a', status: 'accent' },
+  mining_activity: { label: 'Mining Activity', hex: '#d29922', status: 'warning' },
   wildfire: { label: 'Wildfire', hex: '#d29922', status: 'warning' },
   agricultural_burning: { label: 'Agricultural Burning', hex: '#3fb950', status: 'success' },
   other_thermal_anomaly: { label: 'Other Anomaly', hex: '#6b7684', status: 'neutral' },

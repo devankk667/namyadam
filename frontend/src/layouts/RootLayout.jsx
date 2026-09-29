@@ -19,7 +19,7 @@ const NAV_ITEMS = [
 ];
 
 export default function RootLayout({ health }) {
-  const isDemo = health?.data_mode === 'demo';
+  const isDemo = health?.data_mode === 'demo_json' || health?.data_mode === 'processed_csv';
   const apiOk = health?.status === 'healthy';
 
   return (
@@ -44,8 +44,8 @@ export default function RootLayout({ health }) {
           <StatusBadge status={apiOk ? 'success' : 'critical'} dot pulse={apiOk} size="xs">
             api: {health?.status || 'connecting'}
           </StatusBadge>
-          <StatusBadge status={health?.model_loaded ? 'info' : 'warning'} size="xs">
-            model: {health?.model_loaded ? 'active' : 'heuristic'}
+          <StatusBadge status={health?.inference_mode === 'trained' ? 'info' : 'warning'} size="xs">
+            model: {health?.inference_mode === 'trained' ? 'trained' : 'heuristic'}
           </StatusBadge>
         </div>
       </header>
