@@ -1,27 +1,51 @@
 """
-PyTorch Multimodal / Tabular Deep Learning model architecture for multi-class thermal classification.
+PyTorch Multimodal / Tabular Deep Learning model architecture
+for multi-class thermal classification.
 """
 
 import torch
 import torch.nn as nn
 
+
 class MultimodalThermalNet(nn.Module):
-    def __init__(self, input_dim: int, num_classes: int = 5, hidden_dims: list = [128, 64, 32]):
+    def __init__(
+        self,
+        tabular_dim: int,
+        image_dim: int = 512,
+        num_classes: int = 5
+    ):
         super().__init__()
 
-        layers = []
-        in_dim = input_dim
-        for h_dim in hidden_dims:
-            layers.append(nn.Linear(in_dim, h_dim))
-            layers.append(nn.BatchNorm1d(h_dim))
-            layers.append(nn.ReLU())
-            layers.append(nn.Dropout(0.2))
-            in_dim = h_dim
+        self.tabular_encoder = nn.Sequential(
+            nn.Linear(tabular_dim, 64),
+            nn.BatchNorm1d(64),
+            nn.ReLU(),
+            nn.Dropout(0.2)
+        )
 
-        self.feature_extractor = nn.Sequential(*layers)
-        self.classifier = nn.Linear(in_dim, num_classes)
+        self.image_encoder = nn.Sequential(
+            nn.Linear(image_dim, 128),
+            nn.BatchNorm1d(128),
+            nn.ReLU(),
+            nn.Dropout(0.2)
+        )
 
-    def forward(self, x):
-        features = self.feature_extractor(x)
-        logits = self.classifier(features)
+        self.classifier = nn.Sequential(
+            nn.Linear(64 + 128, 64),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(64, num_classes)
+        )
+
+    def forward(self, tabular_x, image_x):
+        tabular_features = self.tabular_encoder(tabular_x)
+        image_features = self.image_encoder(image_x)
+
+        fused_features = torch.cat(
+            [tabular_features, image_features],
+            dim=1
+        )
+
+        logits = self.classifier(fused_features)
+
         return logits

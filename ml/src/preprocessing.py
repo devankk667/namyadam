@@ -12,6 +12,7 @@ NUMERICAL_FEATURES = [
     "temp_difference",
     "frp",
     "confidence",
+    "is_nighttime",
     "dist_to_industrial",
     "industrial_count_2km",
     "industrial_count_5km",

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import GeospatialMap from '../components/GeospatialMap';
@@ -65,28 +65,41 @@ export default function DetectionDetailPage() {
   const [activeTab, setActiveTab] = useState('analysis');
   const [evaluatedAt] = useState(() => new Date());
 
-  useEffect(() => {
-    async function loadDetail() {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await api.getDetectionDetail(id);
-        setData(res);
-      } catch (err) {
-        setError(err.message || 'Failed to load detection details.');
-      } finally {
-        setLoading(false);
-      }
+  const loadDetail = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.getDetectionDetail(id);
+      setData(res);
+    } catch (err) {
+      setError(err.message || 'Failed to load detection details.');
+    } finally {
+      setLoading(false);
     }
-    loadDetail();
   }, [id]);
+
+  useEffect(() => {
+    loadDetail();
+  }, [loadDetail]);
 
   const diagnostics = useMemo(() => {
     if (!data) return null;
     const { record, ml_prediction } = data;
-    const isHeuristic = ml_prediction?.model_version?.includes('fallback');
+    const isHeuristic = ml_prediction?.inference_mode === 'heuristic' || ml_prediction?.model_version?.includes('fallback');
     const warnings = [];
 
+    if (data.prediction_error) {
+      warnings.push({
+        level: 'warning',
+        text: `Prediction unavailable: ${data.prediction_error}`,
+      });
+    }
+    if (isHeuristic) {
+      warnings.push({
+        level: 'warning',
+        text: ml_prediction?.fallback_reason || 'Inference served by the rule-based heuristic fallback, not a trained model artifact.',
+      });
+    }
     if (ml_prediction && ml_prediction.confidence < 0.7) {
       warnings.push({
         level: 'warning',
@@ -105,12 +118,7 @@ export default function DetectionDetailPage() {
         text: `Limited historical window: only ${record.detection_count_30d} observation(s) in the trailing 30 days — persistence score may be unstable.`,
       });
     }
-    if (isHeuristic) {
-      warnings.push({
-        level: 'warning',
-        text: 'Inference served by the rule-based heuristic fallback, not a trained model artifact.',
-      });
-    }
+
     if (warnings.length === 0) {
       warnings.push({ level: 'success', text: 'No data-quality or confidence warnings triggered for this record.' });
     }
@@ -139,12 +147,20 @@ export default function DetectionDetailPage() {
           title="Detection record not found"
           message={error || `No record matching ID '${id}'.`}
           action={
-            <button
-              onClick={() => navigate('/')}
-              className="mt-2 px-3 py-1.5 bg-panel2 hover:bg-line border border-line text-[11px] font-mono text-ink-secondary"
-            >
-              return to console
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={loadDetail}
+                className="mt-2 px-3 py-1.5 bg-panel2 hover:bg-line border border-line text-[11px] font-mono text-ink-secondary"
+              >
+                retry
+              </button>
+              <button
+                onClick={() => navigate('/')}
+                className="mt-2 px-3 py-1.5 bg-panel2 hover:bg-line border border-line text-[11px] font-mono text-ink-secondary"
+              >
+                return to console
+              </button>
+            </div>
           }
         />
       </div>

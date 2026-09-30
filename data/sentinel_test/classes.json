@@ -1,0 +1,6 @@
+{
+  "agricultural_burning": 0,
+  "industrial_fire": 1,
+  "mining_activity": 2,
+  "gas_flare": 3
+}

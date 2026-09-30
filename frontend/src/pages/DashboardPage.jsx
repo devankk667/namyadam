@@ -8,7 +8,7 @@ import {
   MapPin,
   Building2,
 } from 'lucide-react';
-import { EmptyState, KeyValueRow, LoadingState, Metric, PageHeader, Panel, StatusBadge } from '../components/ui';
+import { EmptyState, ErrorState, KeyValueRow, LoadingState, Metric, PageHeader, Panel, StatusBadge } from '../components/ui';
 import { classificationMeta, formatClassLabel, severityStatus } from '../lib/classification';
 
 export default function DashboardPage() {
@@ -20,6 +20,7 @@ export default function DashboardPage() {
   const [selectedDetection, setSelectedDetection] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lastRefreshed, setLastRefreshed] = useState(null);
+  const [loadErrors, setLoadErrors] = useState({});
 
   const [minConf, setMinConf] = useState('');
   const [minFrp, setMinFrp] = useState('');
@@ -28,26 +29,37 @@ export default function DashboardPage() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    const requests = [
+      ['summary', api.getAnalyticsSummary],
+      ['detections', () => api.getDetections({
+        min_confidence: minConf || undefined,
+        min_frp: minFrp || undefined,
+        classification: selectedClass || undefined,
+        region: searchRegion || undefined,
+        page_size: 100
+      })],
+      ['alerts', api.getAlerts],
+    ];
+    const errors = {};
     try {
-      const [sumRes, detRes, altRes] = await Promise.all([
-        api.getAnalyticsSummary(),
-        api.getDetections({
-          min_confidence: minConf || undefined,
-          min_frp: minFrp || undefined,
-          classification: selectedClass || undefined,
-          region: searchRegion || undefined,
-          page_size: 100
-        }),
-        api.getAlerts()
-      ]);
-
-      setSummary(sumRes);
-      setDetections(detRes.items || []);
-      setAlerts(altRes || []);
-      setSelectedDetection((prev) => prev || (detRes.items && detRes.items[0]) || null);
-      setLastRefreshed(new Date());
-    } catch (err) {
-      console.error('Dashboard error loading data:', err);
+      const results = await Promise.all(requests.map(async ([name, request]) => {
+        try {
+          return [name, await request()];
+        } catch (error) {
+          errors[name] = error.message || 'Request failed';
+          return [name, null];
+        }
+      }));
+      const resultMap = Object.fromEntries(results);
+      if (resultMap.summary) setSummary(resultMap.summary);
+      if (resultMap.detections) {
+        const items = Array.isArray(resultMap.detections.items) ? resultMap.detections.items : [];
+        setDetections(items);
+        setSelectedDetection((prev) => items.some((item) => item.id === prev?.id) ? prev : items[0] || null);
+      }
+      if (Array.isArray(resultMap.alerts)) setAlerts(resultMap.alerts);
+      setLoadErrors(errors);
+      if (!Object.keys(errors).length) setLastRefreshed(new Date());
     } finally {
       setLoading(false);
     }
@@ -77,6 +89,7 @@ export default function DashboardPage() {
 
       {/* Summary metrics */}
       <Panel title="Detection Summary" eyebrow="analytics/summary" noPadding>
+        {loadErrors.summary && <ErrorState title="Summary unavailable" message={loadErrors.summary} action={<button onClick={loadData} className="mt-2 px-3 py-1.5 border border-line text-[11px]">Retry</button>} />}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 divide-x divide-y lg:divide-y-0 divide-line">
           <Metric label="Total Detections" value={summary?.total_detections ?? '—'} caption="VIIRS / MODIS" help="All thermal anomaly records currently loaded in the active dataset." />
           <Metric label="High Risk" value={summary?.high_risk_events ?? '—'} tone="critical" caption="FRP > 50MW or fire" help="Events flagged critical: fire radiative power above 50MW, or classified as an industrial fire." />
@@ -103,10 +116,9 @@ export default function DashboardPage() {
               >
                 <option value="">all classes</option>
                 <option value="industrial_fire">industrial fire</option>
-                <option value="industrial_thermal_source">persistent source</option>
-                <option value="wildfire">wildfire</option>
-                <option value="agricultural_burning">agricultural</option>
-                <option value="other_thermal_anomaly">other anomaly</option>
+                <option value="gas_flare">gas flare</option>
+                <option value="mining_activity">mining activity</option>
+                <option value="agricultural_burning">agricultural burning</option>
               </select>
               <select
                 value={minConf}
@@ -172,7 +184,7 @@ export default function DashboardPage() {
             eyebrow="rule engine"
             actions={<span className="text-[10px] font-mono text-ink-muted">{alerts.length} total</span>}
           >
-            <div className="space-y-0 max-h-[320px] overflow-y-auto -mx-1 px-1">
+            {loadErrors.alerts ? <ErrorState title="Alerts unavailable" message={loadErrors.alerts} action={<button onClick={loadData} className="mt-2 px-3 py-1.5 border border-line text-[11px]">Retry</button>} /> : <div className="space-y-0 max-h-[320px] overflow-y-auto -mx-1 px-1">
               {alerts.slice(0, 6).map((alt) => (
                 <button
                   key={alt.id}
@@ -188,7 +200,7 @@ export default function DashboardPage() {
                 </button>
               ))}
               {alerts.length === 0 && !loading && <EmptyState message="No active warnings." />}
-            </div>
+            </div>}
             <button
               onClick={() => navigate('/alerts')}
               className="w-full mt-2 flex items-center justify-center gap-1.5 py-1.5 border border-line text-[11px] font-medium text-ink-secondary hover:text-ink-primary hover:bg-panel2 transition-colors"
@@ -210,6 +222,8 @@ export default function DashboardPage() {
       >
         {loading ? (
           <LoadingState label="fetching /api/detections…" />
+        ) : loadErrors.detections ? (
+          <ErrorState title="Detections unavailable" message={loadErrors.detections} action={<button onClick={loadData} className="mt-2 px-3 py-1.5 border border-line text-[11px]">Retry</button>} />
         ) : detections.length === 0 ? (
           <EmptyState />
         ) : (

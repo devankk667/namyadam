@@ -9,32 +9,36 @@ const SAMPLE_PRESETS = [
     name: 'Refinery Flare Stack',
     data: {
       brightness: 368.5, bright_t31: 295.2, frp: 35.0, confidence: 96.0,
-      dist_to_industrial: 0.12, industrial_count_2km: 6, industrial_count_5km: 14,
-      nearest_facility_type: 'refinery', persistence_score: 0.92, detection_count_30d: 28, daynight: 'N'
+      dist_to_industrial: 0.12, industrial_count_1km: 3, industrial_count_2km: 6, industrial_count_5km: 14,
+      power_plant_count_5km: 1, quarry_count_5km: 0, flare_count_5km: 2, petroleum_well_count_5km: 0,
+      industrial_landuse_nearby: 1, nearest_facility_type: 'refinery', persistence_score: 0.92, detection_count_30d: 28, daynight: 'N'
     }
   },
   {
     name: 'Chemical Fire',
     data: {
       brightness: 395.0, bright_t31: 315.0, frp: 180.0, confidence: 99.0,
-      dist_to_industrial: 0.25, industrial_count_2km: 4, industrial_count_5km: 10,
-      nearest_facility_type: 'chemical', persistence_score: 0.35, detection_count_30d: 4, daynight: 'D'
+      dist_to_industrial: 0.25, industrial_count_1km: 2, industrial_count_2km: 4, industrial_count_5km: 10,
+      power_plant_count_5km: 0, quarry_count_5km: 0, flare_count_5km: 1, petroleum_well_count_5km: 0,
+      industrial_landuse_nearby: 1, nearest_facility_type: 'chemical', persistence_score: 0.35, detection_count_30d: 4, daynight: 'D'
     }
   },
   {
     name: 'Boreal Wildfire',
     data: {
       brightness: 375.0, bright_t31: 305.0, frp: 120.0, confidence: 92.0,
-      dist_to_industrial: 18.5, industrial_count_2km: 0, industrial_count_5km: 0,
-      nearest_facility_type: 'none', persistence_score: 0.10, detection_count_30d: 2, daynight: 'D'
+      dist_to_industrial: 18.5, industrial_count_1km: 0, industrial_count_2km: 0, industrial_count_5km: 0,
+      power_plant_count_5km: 0, quarry_count_5km: 0, flare_count_5km: 0, petroleum_well_count_5km: 0,
+      industrial_landuse_nearby: 0, nearest_facility_type: 'none', persistence_score: 0.10, detection_count_30d: 2, daynight: 'D'
     }
   },
   {
     name: 'Crop Stubble Burning',
     data: {
       brightness: 332.0, bright_t31: 292.0, frp: 14.5, confidence: 78.0,
-      dist_to_industrial: 12.0, industrial_count_2km: 0, industrial_count_5km: 1,
-      nearest_facility_type: 'none', persistence_score: 0.05, detection_count_30d: 1, daynight: 'D'
+      dist_to_industrial: 12.0, industrial_count_1km: 0, industrial_count_2km: 0, industrial_count_5km: 1,
+      power_plant_count_5km: 0, quarry_count_5km: 0, flare_count_5km: 0, petroleum_well_count_5km: 0,
+      industrial_landuse_nearby: 0, nearest_facility_type: 'none', persistence_score: 0.05, detection_count_30d: 1, daynight: 'D'
     }
   }
 ];
@@ -47,6 +51,12 @@ const FIELDS = [
   { name: 'dist_to_industrial', label: 'Dist. to Industrial (km)', step: '0.01' },
   { name: 'persistence_score', label: 'Persistence Score (0-1)', step: '0.01', min: 0, max: 1 },
   { name: 'detection_count_30d', label: 'Trailing 30d Detections', step: '1' },
+  { name: 'industrial_count_1km', label: 'Industrial Sites (1 km)', step: '1', min: 0 },
+  { name: 'power_plant_count_5km', label: 'Power Plants (5 km)', step: '1', min: 0 },
+  { name: 'quarry_count_5km', label: 'Quarries (5 km)', step: '1', min: 0 },
+  { name: 'flare_count_5km', label: 'Flare Sites (5 km)', step: '1', min: 0 },
+  { name: 'petroleum_well_count_5km', label: 'Wells (5 km)', step: '1', min: 0 },
+  { name: 'industrial_landuse_nearby', label: 'Industrial Land Use (0/1)', step: '1', min: 0, max: 1 },
 ];
 
 const FACILITY_TYPES = ['refinery', 'flare_stack', 'chemical', 'gas_terminal', 'power_plant', 'steel_works', 'factory', 'none'];
@@ -223,8 +233,10 @@ export default function PredictionDemoPage() {
               </div>
 
               <div className="flex items-center gap-2 text-[11px] font-mono text-ink-muted pt-1">
-                <StatusBadge status="neutral" size="xs">model v{result.model_version}</StatusBadge>
+                <StatusBadge status={result.inference_mode === 'trained' ? 'success' : 'warning'} size="xs">{result.inference_mode === 'trained' ? 'trained model' : 'heuristic fallback'}</StatusBadge>
+                <StatusBadge status="neutral" size="xs">{result.model_version}</StatusBadge>
               </div>
+              {result.fallback_reason && <p className="text-[11px] text-status-warning">Fallback reason: {result.fallback_reason}</p>}
 
               <Disclosure title="response.json" eyebrow="raw output" mono>
                 <JsonViewer data={result} title="200 OK" />

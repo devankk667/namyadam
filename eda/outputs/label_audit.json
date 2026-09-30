@@ -1,0 +1,45 @@
+{
+  "config": {
+    "flare_km": 1.0,
+    "flare_km_high": 0.5,
+    "flare_days": 5,
+    "flare_days_high": 10,
+    "flare_span": 30,
+    "quarry_km": 2.0,
+    "quarry_days": 3,
+    "quarry_days_high": 15,
+    "indust_km": 1.0,
+    "indust_frp": 15.0,
+    "agri_rural_km": 5.0,
+    "agri_frp": 30.0,
+    "agri_span": 21
+  },
+  "burn_months": [
+    3,
+    4,
+    10,
+    11
+  ],
+  "osm_files": [
+    "data/raw/osm\\_partial_west_india.parquet",
+    "data/raw/osm\\central_india.parquet",
+    "data/raw/osm\\east_india.parquet",
+    "data/raw/osm\\north_east_india.parquet",
+    "data/raw/osm\\west_india.parquet"
+  ],
+  "n_events": 1110501,
+  "label_x_conf": {
+    "agricultural_burning/low": 18044,
+    "agricultural_burning/medium": 90,
+    "gas_flare/high": 1,
+    "gas_flare/medium": 7,
+    "industrial_fire/low": 602,
+    "industrial_fire/medium": 83,
+    "mining_activity/high": 34,
+    "mining_activity/medium": 85,
+    "unknown/": 1091555
+  },
+  "wildfire_labels": 0,
+  "wildfire_note": "pending vegetation/forest mask",
+  "usable_high_medium_obs_note": "map via firms_obs_event_map.parquet for training counts"
+}

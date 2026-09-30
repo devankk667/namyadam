@@ -1,0 +1,10 @@
+{
+  "total_observations": 1891825,
+  "rf_class_distribution": {
+    "agricultural_burning": 1723909,
+    "industrial_fire": 159748,
+    "mining_activity": 7354,
+    "gas_flare": 814
+  },
+  "output_file": "data\\processed\\firms_1.1M_predictions.parquet"
+}

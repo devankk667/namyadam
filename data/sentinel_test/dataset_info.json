@@ -1,0 +1,56 @@
+{
+  "created_utc": "2026-09-28T14:59:47+00:00",
+  "source": "https://earth-search.aws.element84.com/v1 :: sentinel-2-c1-l2a",
+  "inputs": [
+    "D:\\Git projects files\\SIH_My_Part\\datasets_classified\\firms_thermal_events_classified.parquet",
+    "D:\\Git projects files\\SIH_My_Part\\datasets_classified\\firms_event_labels_classified.parquet",
+    "D:\\Git projects files\\SIH_My_Part\\datasets_classified\\firms_detections_classified.parquet"
+  ],
+  "patch_format": "npz: image float16 (C,H,W) surface reflectance, NaN = nodata; scl uint8 (H,W)",
+  "bands": [
+    "B02",
+    "B03",
+    "B04",
+    "B08",
+    "B11",
+    "B12"
+  ],
+  "patch_size_px": 512,
+  "resolution_m": 10.0,
+  "status_counts": {
+    "ok": 40
+  },
+  "ok_label_counts": {
+    "industrial_fire": 11,
+    "agricultural_burning": 11,
+    "mining_activity": 10,
+    "gas_flare": 8
+  },
+  "config": {
+    "events_path": "D:\\Git projects files\\SIH_My_Part\\datasets_classified\\firms_thermal_events_classified.parquet",
+    "labels_path": "D:\\Git projects files\\SIH_My_Part\\datasets_classified\\firms_event_labels_classified.parquet",
+    "detections_path": "D:\\Git projects files\\SIH_My_Part\\datasets_classified\\firms_detections_classified.parquet",
+    "out_dir": "D:\\Git projects files\\SIH_My_Part\\datasets_classified\\satellite_patches",
+    "stac_url": "https://earth-search.aws.element84.com/v1",
+    "collection": "sentinel-2-c1-l2a",
+    "days_before": 15,
+    "days_after": 15,
+    "max_active_span_days": 60,
+    "fallback_extra_days": 45,
+    "max_scene_cloud": 70.0,
+    "max_patch_cloud": 0.2,
+    "max_patch_nodata": 0.05,
+    "max_candidates": 8,
+    "patch_size_px": 512,
+    "resolution_m": 10.0,
+    "workers": 16,
+    "band_threads": 7,
+    "speculative_max_cloud": 10.0,
+    "max_concurrent_reads": 48,
+    "retries": 5,
+    "stats_sample": 2000,
+    "overwrite": true,
+    "checkpoint_every": 100,
+    "save_previews": true
+  }
+}
