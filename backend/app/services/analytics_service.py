@@ -14,6 +14,9 @@ class AnalyticsService:
 
     @staticmethod
     def get_summary() -> AnalyticsSummary:
+        snapshot = detection_repo.get_analytics_snapshot()
+        if snapshot:
+            return AnalyticsSummary(**snapshot["summary"])
         raw_items = detection_repo.get_raw_list()
         total = len(raw_items)
         industrial_assoc = sum(
@@ -40,6 +43,9 @@ class AnalyticsService:
 
     @staticmethod
     def get_temporal_trends() -> List[Dict[str, Any]]:
+        snapshot = detection_repo.get_analytics_snapshot()
+        if snapshot:
+            return snapshot["temporal"]
         raw_items = detection_repo.get_raw_list()
         if not raw_items:
             return []
@@ -62,6 +68,9 @@ class AnalyticsService:
 
     @staticmethod
     def get_classification_breakdown() -> List[Dict[str, Any]]:
+        snapshot = detection_repo.get_analytics_snapshot()
+        if snapshot:
+            return snapshot["classification"]
         raw_items = detection_repo.get_raw_list()
         if not raw_items:
             return []
@@ -86,6 +95,9 @@ class AnalyticsService:
 
     @staticmethod
     def get_regional_breakdown() -> List[Dict[str, Any]]:
+        snapshot = detection_repo.get_analytics_snapshot()
+        if snapshot:
+            return snapshot["regions"]
         raw_items = detection_repo.get_raw_list()
         if not raw_items:
             return []
@@ -121,6 +133,9 @@ class AnalyticsService:
 
     @staticmethod
     def get_persistence_clusters() -> List[Dict[str, Any]]:
+        snapshot = detection_repo.get_analytics_snapshot()
+        if snapshot:
+            return snapshot["persistence"]
         raw_items = detection_repo.get_raw_list()
         # Persistence scores are normalized to [0, 1] by the repository, but
         # tolerate legacy data with strings or missing values.
@@ -217,7 +232,8 @@ class AlertService:
                 ))
                 alert_id += 1
 
-        # Sort CRITICAL first, then HIGH, then MEDIUM
+        # Keep this endpoint bounded even as the live poller accumulates detections.
+        # Sort CRITICAL first, then HIGH, then MEDIUM; newest alerts win ties.
         severity_rank = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
         alerts.sort(key=lambda x: severity_rank.get(x.severity, 4))
-        return alerts
+        return alerts[:200]

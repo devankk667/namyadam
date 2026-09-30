@@ -51,6 +51,7 @@ class PredictionInput(BaseModel):
     petroleum_well_count_5km: Optional[int] = None
     industrial_landuse_nearby: Optional[int] = None
     available_model_features: Optional[List[str]] = None
+    confidence_ordinal: Optional[int] = Field(None, ge=0, le=2)
 
 class PredictionExplanation(BaseModel):
     top_contributing_features: Dict[str, float]

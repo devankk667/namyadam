@@ -15,7 +15,8 @@ def test_configured_firms_data_is_loaded_into_detection_api():
     assert health.status_code == 200
     health_data = health.json()
     assert health_data["data_source"] == "firms_predictions"
-    assert health_data["source_record_count"] >= health_data["data_record_count"] > 0
+    assert health_data["source_record_count"] >= health_data["map_sample_count"] > 0
+    assert health_data["data_record_count"] == health_data["map_sample_count"] + health_data["live_record_count"]
 
     response = client.get("/api/detections?page=1&page_size=5")
     assert response.status_code == 200
@@ -100,8 +101,8 @@ def test_prediction_endpoint():
 def test_analytics_endpoints():
     r_sum = client.get("/api/analytics/summary")
     assert r_sum.status_code == 200
-    detection_count = client.get("/api/health").json()["data_record_count"]
-    assert r_sum.json()["total_detections"] == detection_count
+    health = client.get("/api/health").json()
+    assert r_sum.json()["total_detections"] == health["analytics_record_count"]
 
     r_temp = client.get("/api/analytics/temporal")
     assert r_temp.status_code == 200
@@ -125,6 +126,14 @@ def test_alerts_endpoint():
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 
+def test_ingestion_status_endpoint_is_explicit_when_live_polling_is_not_configured():
+    response = client.get("/api/ingestion/status")
+    assert response.status_code == 200
+    status = response.json()
+    assert {"enabled", "configured", "running", "stored_records", "osm_enrichment_available", "last_error"} <= status.keys()
+    assert isinstance(status["enabled"], bool)
+
+
 def test_fusion_status_endpoint():
     response = client.get("/api/fusion/status")
     assert response.status_code == 200
@@ -132,6 +141,16 @@ def test_fusion_status_endpoint():
     assert data["prediction_kind"] == "spatial_cv_oof"
     assert isinstance(data["enabled"], bool)
     assert "reason" in data
+    comparison = data.get("ablation_comparison")
+    assert isinstance(comparison, list)
+    for candidate in comparison:
+        assert {"feature_set", "estimator", "trusted_macro_f1", "trusted_macro_f1_no_flare", "trusted_events"} <= candidate.keys()
+    if data["enabled"]:
+        assert any(
+            candidate["feature_set"] == data["feature_set"]
+            and candidate["estimator"] == data["estimator"]
+            for candidate in comparison
+        )
 
 
 def test_models_endpoint():

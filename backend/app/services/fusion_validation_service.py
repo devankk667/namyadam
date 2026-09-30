@@ -21,6 +21,12 @@ FUSION_CLASSES = [
     "industrial_fire",
     "mining_activity",
 ]
+FUSION_ABLATIONS = [
+    "A_tabular",
+    "B_tabular_spectral",
+    "C_tabular_spectral_frozen",
+    "D_tabular_spectral_cnn",
+]
 
 
 class FusionValidationService:
@@ -36,6 +42,7 @@ class FusionValidationService:
             "image_covered_events": 0,
             "trusted_macro_f1": None,
             "trusted_macro_f1_no_flare": None,
+            "ablation_comparison": [],
         }
         self._load()
 
@@ -62,6 +69,26 @@ class FusionValidationService:
             estimator = selected["estimator"]
             candidate_key = f"{feature_set}/{estimator}"
             candidate_metrics = report.get("candidates", {}).get(candidate_key, {}).get("metrics", {})
+            comparisons = []
+            for key, candidate in report.get("candidates", {}).items():
+                try:
+                    candidate_feature_set, candidate_estimator = key.rsplit("/", 1)
+                except ValueError:
+                    continue
+                if candidate_feature_set not in FUSION_ABLATIONS:
+                    continue
+                trusted = candidate.get("metrics", {}).get("trusted_oof", {})
+                comparisons.append({
+                    "feature_set": candidate_feature_set,
+                    "estimator": candidate_estimator,
+                    "trusted_macro_f1": trusted.get("macro_f1"),
+                    "trusted_macro_f1_no_flare": trusted.get("macro_f1_no_flare"),
+                    "trusted_events": trusted.get("n"),
+                })
+            comparisons.sort(key=lambda item: (
+                FUSION_ABLATIONS.index(item["feature_set"]),
+                item["estimator"],
+            ))
             columns = [
                 "event_id", "feature_set", "estimator", "fold", "has_image",
                 "predicted_class", "confidence",
@@ -114,6 +141,7 @@ class FusionValidationService:
                 "trusted_macro_f1": trusted_metrics.get("macro_f1"),
                 "trusted_macro_f1_no_flare": trusted_metrics.get("macro_f1_no_flare"),
                 "split": report.get("dataset", {}).get("evaluation"),
+                "ablation_comparison": comparisons,
             }
         except Exception as error:
             self._predictions.clear()

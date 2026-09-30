@@ -30,6 +30,7 @@ export default function AnalyticsPage() {
   const [classData, setClassData] = useState([]);
   const [regionData, setRegionData] = useState([]);
   const [persistenceData, setPersistenceData] = useState([]);
+  const [health, setHealth] = useState(null);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(true);
 
@@ -41,12 +42,13 @@ export default function AnalyticsPage() {
       ['classification', api.getAnalyticsClassification, setClassData],
       ['regions', api.getAnalyticsRegions, setRegionData],
       ['persistence', api.getAnalyticsPersistence, setPersistenceData],
+      ['health', api.getHealth, setHealth],
     ];
     try {
       await Promise.all(requests.map(async ([name, request, setData]) => {
         try {
           const data = await request();
-          setData(Array.isArray(data) ? data : []);
+          setData(name === 'health' ? data : Array.isArray(data) ? data : []);
         } catch (err) {
           nextErrors[name] = err.message || 'Request failed';
           console.error(`Analytics ${name} load error:`, err);
@@ -68,6 +70,11 @@ export default function AnalyticsPage() {
         title="Analytics & Persistence"
         description="Temporal activity trends, classification distributions, and recurring industrial thermal source detection."
       />
+
+      <div className="border border-line bg-panel px-4 py-3 text-[11px] font-mono text-ink-muted">
+        {health?.analytics_scope === 'full_source' ? 'Aggregates use the complete FIRMS prediction source' : 'Aggregates use currently loaded records'}
+        {' '}({health?.analytics_record_count ?? '—'} records). The map/table use a {health?.map_sample_count ?? '—'}-record sample; live FIRMS observations are shown separately in the monitoring map.
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <Panel title="Temporal Observation Trend" eyebrow="analytics/temporal" icon={Activity}>

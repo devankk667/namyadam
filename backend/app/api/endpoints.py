@@ -11,6 +11,7 @@ from app.repositories.detection_repository import detection_repo
 from app.services.model_service import model_service
 from app.services.fusion_validation_service import fusion_validation_service
 from app.services.analytics_service import AnalyticsService, AlertService
+from app.services.live_firms_service import live_firms_service
 
 router = APIRouter()
 
@@ -27,11 +28,21 @@ def get_health():
         "data_mode": detection_repo.data_source,
         "data_source": detection_repo.data_source,
         "data_record_count": len(detection_repo.get_raw_list()),
+        "map_sample_count": len(detection_repo.get_raw_list()) - len(detection_repo._live_cache),
+        "live_record_count": len(detection_repo._live_cache),
         "source_record_count": detection_repo.total_source_records,
+        "analytics_record_count": (detection_repo.get_analytics_snapshot() or {}).get("source_record_count", len(detection_repo.get_raw_list())),
+        "analytics_scope": "full_source" if detection_repo.get_analytics_snapshot() else "loaded_records",
         "data_error": detection_repo.data_error,
         "fusion_validation_available": fusion_validation_service.get_status()["enabled"],
         "timestamp": datetime.utcnow().isoformat() + "Z"
     }
+
+@router.get("/ingestion/status")
+def get_ingestion_status():
+    """Health and provenance for the optional background FIRMS poller."""
+    return live_firms_service.get_status()
+
 
 @router.get("/detections")
 def get_detections(
@@ -61,6 +72,17 @@ def get_detection_detail(detection_id: str):
         raise HTTPException(status_code=404, detail=f"Detection with ID '{detection_id}' not found.")
     record = {key: value for key, value in raw_record.items() if key != "_model_features_available"}
 
+    if record.get("source") == "live_firms" and record.get("prediction_status") != "classified":
+        return {
+            "record": record,
+            "ml_prediction": None,
+            "fusion_prediction": None,
+            "prediction_error": (
+                "Tier 2 inference was not run: "
+                + str(record.get("prediction_status", "required features unavailable"))
+            ),
+        }
+
     # Run prediction on this record for detail view
     prediction_error = None
     try:
@@ -69,6 +91,7 @@ def get_detection_detail(detection_id: str):
             bright_t31=record.get("bright_t31", 280.0),
             frp=record.get("frp", 30.0),
             confidence=record.get("confidence", 85.0),
+            confidence_ordinal=record.get("confidence_ordinal"),
             dist_to_industrial=record.get("dist_to_industrial", 1.5),
             industrial_count_2km=record.get("industrial_count_2km", 2),
             industrial_count_5km=record.get("industrial_count_5km", 5),

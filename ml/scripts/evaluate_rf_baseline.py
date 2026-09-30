@@ -29,6 +29,7 @@ import pandas as pd
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
 from train_rf_baseline import CONF_ORD  # noqa: E402
+from firms_ids import ensure_observation_ids  # noqa: E402
 
 import matplotlib
 matplotlib.use("Agg")
@@ -67,18 +68,19 @@ def main():
     labels = pd.read_parquet(LABELS)
     good = labels[(labels["label"] != "unknown") & (labels["label_confidence"].isin(keep_conf))]
     m = pd.read_parquet(MAP)
-    obs_ids = m[m["event_id"].isin(set(good["event_id"]))]["obs_id"].to_numpy()
-    df = pd.read_parquet(ENRICHED)
-    sub = df.iloc[obs_ids].copy()
+    m["obs_id"] = m["obs_id"].astype(str)
+    df = ensure_observation_ids(pd.read_parquet(ENRICHED))
+    labeled_map = m[m["event_id"].isin(set(good["event_id"]))]
+    sub = df.merge(labeled_map, on="obs_id", how="inner", validate="one_to_one")
     sub["temp_diff"] = (pd.to_numeric(sub["bright_ti4"], errors="coerce")
                         - pd.to_numeric(sub["bright_ti5"], errors="coerce"))
     sub["conf_ord"] = sub["confidence"].map(CONF_ORD).fillna(1).astype(int)
     sub["is_night"] = (sub["daynight"] == "N").astype(int)
     if TEMPORAL.exists() and any(f not in sub.columns for f in FEATURES):
-        tmp = pd.read_parquet(TEMPORAL).set_index("obs_id")
-        sub = sub.join(tmp[[f for f in FEATURES if f in tmp.columns]])
-    ev_of = m.set_index("obs_id")["event_id"]
-    sub["event_id"] = ev_of.loc[sub.index].to_numpy()
+        tmp = pd.read_parquet(TEMPORAL)
+        tmp["obs_id"] = tmp["obs_id"].astype(str)
+        extra = [f for f in FEATURES if f not in sub.columns and f in tmp.columns]
+        sub = sub.merge(tmp[["obs_id", *extra]], on="obs_id", how="left", validate="one_to_one")
     sub["y"] = sub["event_id"].map(good.set_index("event_id")["label"])
     sub = sub.dropna(subset=["y"]).reset_index(drop=True)
 

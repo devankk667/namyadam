@@ -29,6 +29,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from firms_ids import ensure_observation_ids
+
 ENRICHED = Path("data/processed/firms_osm_enriched.parquet")
 MAP = Path("data/processed/firms_obs_event_map.parquet")
 OUT = Path("data/processed/firms_temporal.parquet")
@@ -36,8 +38,8 @@ CELL = 0.01
 
 
 def main():
-    df = pd.read_parquet(ENRICHED, columns=["latitude", "longitude", "frp", "acq_date", "acq_time"])
-    df = df.reset_index(drop=True).rename_axis("obs_id").reset_index()
+    df = pd.read_parquet(ENRICHED)
+    df = ensure_observation_ids(df)
     dt = (pd.to_datetime(df["acq_date"], errors="coerce")
           + pd.to_timedelta(pd.to_numeric(df["acq_time"].astype(str).str.zfill(4).str[:2],
                                           errors="coerce").fillna(0), unit="h"))

@@ -18,6 +18,8 @@ export default function DashboardPage() {
   const [detections, setDetections] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [fusionStatus, setFusionStatus] = useState(null);
+  const [ingestionStatus, setIngestionStatus] = useState(null);
+  const [healthStatus, setHealthStatus] = useState(null);
   const [selectedDetection, setSelectedDetection] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lastRefreshed, setLastRefreshed] = useState(null);
@@ -41,6 +43,8 @@ export default function DashboardPage() {
       })],
       ['alerts', api.getAlerts],
       ['fusion', api.getFusionStatus],
+      ['ingestion', api.getIngestionStatus],
+      ['health', api.getHealth],
     ];
     const errors = {};
     try {
@@ -61,6 +65,8 @@ export default function DashboardPage() {
       }
       if (Array.isArray(resultMap.alerts)) setAlerts(resultMap.alerts);
       if (resultMap.fusion) setFusionStatus(resultMap.fusion);
+      if (resultMap.ingestion) setIngestionStatus(resultMap.ingestion);
+      if (resultMap.health) setHealthStatus(resultMap.health);
       setLoadErrors(errors);
       if (!Object.keys(errors).length) setLastRefreshed(new Date());
     } finally {
@@ -70,6 +76,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadData();
+    const refreshTimer = window.setInterval(loadData, 60000);
+    return () => window.clearInterval(refreshTimer);
   }, [loadData]);
 
   return (
@@ -77,8 +85,15 @@ export default function DashboardPage() {
       <PageHeader
         title="Monitoring Console"
         description="Real-time thermal anomaly identification, industrial facility spatial enrichment, and risk analysis."
-        badges={<StatusBadge status="info" dot pulse size="xs">live feed</StatusBadge>}
-        meta={[{ label: 'last sync', value: lastRefreshed ? lastRefreshed.toLocaleTimeString() : '—' }]}
+        badges={ingestionStatus?.running && !ingestionStatus?.last_error
+          ? <StatusBadge status="success" dot pulse size="xs">FIRMS polling</StatusBadge>
+          : <StatusBadge status={ingestionStatus?.last_error ? 'critical' : 'warning'} size="xs">
+              {ingestionStatus?.last_error ? 'FIRMS poll error' : 'historical sample'}
+            </StatusBadge>}
+        meta={[
+          { label: 'last sync', value: lastRefreshed ? lastRefreshed.toLocaleTimeString() : '—' },
+          { label: 'last FIRMS poll', value: ingestionStatus?.last_success_at ? new Date(ingestionStatus.last_success_at).toLocaleTimeString() : 'not configured' },
+        ]}
         actions={
           <button
             onClick={loadData}
@@ -100,6 +115,9 @@ export default function DashboardPage() {
           <Metric label="Persistent Sources" value={summary?.persistent_sources ?? '—'} tone="warning" caption="30-day recurring" help="Locations with repeated thermal activity over the trailing 30-day observation window." />
           <Metric label="Active Flare Stacks" value={summary?.active_thermal_sources ?? '—'} tone="info" caption="operational flares" help="Persistent thermal sources currently classified as operating flare stacks." />
           <Metric label="High Confidence" value={summary?.high_confidence_events ?? '—'} tone="success" caption="≥ 90% confidence" help="Detections where the sensor-reported confidence score meets or exceeds 90%." />
+        </div>
+        <div className="border-t border-line px-4 py-2 text-[10px] font-mono text-ink-muted">
+          {healthStatus?.analytics_scope === 'full_source' ? 'Full-source analytics' : 'Loaded-record analytics'} use {healthStatus?.analytics_record_count ?? '—'} records; map/table show a {healthStatus?.map_sample_count ?? '—'}-record sample, plus available live FIRMS observations.
         </div>
       </Panel>
 
@@ -162,11 +180,14 @@ export default function DashboardPage() {
                   </StatusBadge>
                 </div>
                 <KeyValueRow label="Region" value={selectedDetection.region} />
+                {selectedDetection.source === 'live_firms' && (
+                  <KeyValueRow label="Live source" value={selectedDetection.prediction_status || 'received'} mono tone="success" />
+                )}
                 <KeyValueRow label="FRP" value={`${selectedDetection.frp} MW`} mono tone="accent" />
-                <KeyValueRow label="Confidence" value={`${selectedDetection.confidence}%`} mono />
+                <KeyValueRow label="Confidence" value={selectedDetection.confidence == null ? 'unavailable' : `${selectedDetection.confidence}%`} mono />
                 <KeyValueRow
                   label="Nearest facility"
-                  value={`${selectedDetection.dist_to_industrial} km · ${selectedDetection.nearest_facility_type}`}
+                  value={selectedDetection.dist_to_industrial == null ? 'unavailable' : `${selectedDetection.dist_to_industrial} km · ${selectedDetection.nearest_facility_type}`}
                   mono
                 />
                 {selectedDetection.fusion_prediction && (

@@ -23,6 +23,17 @@ class Settings(BaseSettings):
     REQUIRE_REAL_DATA: bool = False
     REQUIRE_TRAINED_MODEL: bool = False
 
+    # Optional near-real-time FIRMS area polling. Keep secrets in environment/.env.
+    LIVE_FIRMS_ENABLED: bool = False
+    FIRMS_MAP_KEY: str = ""
+    LIVE_FIRMS_SOURCE: str = "VIIRS_NOAA20_SP"
+    LIVE_FIRMS_BBOX: str = "68,8,97,37"
+    LIVE_FIRMS_POLL_INTERVAL_SECONDS: int = 900
+    LIVE_FIRMS_LOOKBACK_DAYS: int = 2
+    LIVE_FIRMS_RETENTION_DAYS: int = 90
+    LIVE_FIRMS_DATABASE_PATH: str = os.path.join(PROJECT_ROOT, "data", "processed", "live_firms.sqlite3")
+    OSM_CACHE_DIR: str = os.path.join(PROJECT_ROOT, "data", "raw", "osm")
+
     # Model selection: "self_trained_rf3", "rf_baseline", "xgb_temporal"
     ACTIVE_MODEL: str = "self_trained_rf3"
 

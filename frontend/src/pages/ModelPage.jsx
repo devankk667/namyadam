@@ -17,6 +17,19 @@ function candidateStatus(key, isDeployed) {
   return 'EVALUATED';
 }
 
+const FUSION_ABLATIONS = [
+  { key: 'A_tabular', label: 'Tabular baseline' },
+  { key: 'B_tabular_spectral', label: 'Tabular + spectral' },
+  { key: 'C_tabular_spectral_frozen', label: 'Tabular + spectral + frozen image' },
+  { key: 'D_tabular_spectral_cnn', label: 'Tabular + spectral + CNN' },
+];
+
+function formatF1(value) {
+  return value == null || !Number.isFinite(Number(value))
+    ? '—'
+    : `${(Number(value) * 100).toFixed(1)}%`;
+}
+
 export default function ModelPage() {
   const [modelStatus, setModelStatus] = useState(null);
   const [availableModels, setAvailableModels] = useState([]);
@@ -68,6 +81,11 @@ export default function ModelPage() {
 
   const importances = modelStatus?.feature_importances || {};
   const sortedFeatures = Object.entries(importances).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const fusionAblations = new Map(
+    (fusionStatus?.ablation_comparison || [])
+      .filter((candidate) => candidate.estimator === fusionStatus?.estimator)
+      .map((candidate) => [candidate.feature_set, candidate]),
+  );
 
   const benchmarks = Object.entries(modelStatus?.all_model_benchmarks || {})
     .map(([key, metrics]) => ({
@@ -113,6 +131,47 @@ export default function ModelPage() {
                 Dashboard fusion labels are out-of-fold validation predictions for known, imaged events—not live
                 inference. Unmatched events continue to show the current FIRMS/Tier 2 result only.
               </p>
+              <div className="border-t border-line pt-3">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-ink-muted">
+                    Feature ablation · {fusionStatus.estimator}
+                  </div>
+                  <span className="text-[10px] text-ink-muted">Same trusted events and spatial folds</span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-[11px] whitespace-nowrap">
+                    <thead className="border-b border-line bg-panel2 font-mono text-[9px] uppercase tracking-wide text-ink-muted">
+                      <tr>
+                        <th className="px-2 py-1.5 font-medium">Feature set</th>
+                        <th className="px-2 py-1.5 font-medium">Trusted macro F1</th>
+                        <th className="px-2 py-1.5 font-medium">No-flare macro F1</th>
+                        <th className="px-2 py-1.5 font-medium">Trusted n</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+                      {FUSION_ABLATIONS.map(({ key, label }) => {
+                        const result = fusionAblations.get(key);
+                        const isSelected = key === fusionStatus.feature_set;
+                        return (
+                          <tr key={key} className={isSelected ? 'bg-accent/[0.05]' : ''}>
+                            <td className="px-2 py-1.5 text-ink-secondary">
+                              {label}
+                              {isSelected && <span className="ml-2 text-accent">selected</span>}
+                            </td>
+                            <td className="px-2 py-1.5 font-mono text-ink-primary">{formatF1(result?.trusted_macro_f1)}</td>
+                            <td className="px-2 py-1.5 font-mono text-status-success">{formatF1(result?.trusted_macro_f1_no_flare)}</td>
+                            <td className="px-2 py-1.5 font-mono text-ink-muted">{result?.trusted_events ?? '—'}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="mt-2 text-[10px] text-ink-muted">
+                  Missing values mean that feature set was not trained for this estimator. The selected result is chosen by
+                  trusted macro F1 excluding gas flare; it is not an independent final test score.
+                </p>
+              </div>
             </div>
           ) : (
             <EmptyState message={fusionStatus.reason || 'Fusion validation predictions are not available yet.'} />

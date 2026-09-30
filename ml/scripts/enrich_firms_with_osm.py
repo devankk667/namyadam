@@ -32,6 +32,8 @@ import numpy as np
 import pandas as pd
 from sklearn.neighbors import BallTree
 
+from firms_ids import ensure_observation_ids
+
 EARTH_KM = 6371.0088
 OUT = Path("data/processed/firms_osm_enriched.parquet")
 QA_JSON = Path("eda/outputs/osm_enrichment_qa.json")
@@ -100,11 +102,16 @@ def main():
     r1, r2, r5 = [r / EARTH_KM for r in COUNT_RADII]
     r2land = 2.0 / EARTH_KM
 
-    read = (pd.read_parquet(firms_path, chunksize=args.chunk) if firms_path.endswith(".parquet")
-            else pd.read_csv(firms_path, chunksize=args.chunk))
+    if firms_path.endswith(".parquet"):
+        import pyarrow.parquet as parquet
+        parquet_file = parquet.ParquetFile(firms_path)
+        read = (batch.to_pandas() for batch in parquet_file.iter_batches(batch_size=args.chunk))
+    else:
+        read = pd.read_csv(firms_path, chunksize=args.chunk)
     parts = []
     total = 0
     for chunk in read:
+        chunk = ensure_observation_ids(chunk)
         lat = pd.to_numeric(chunk["latitude"], errors="coerce").to_numpy()
         lon = pd.to_numeric(chunk["longitude"], errors="coerce").to_numpy()
         pts = np.radians(np.column_stack([lat, lon]))

@@ -27,6 +27,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, f1_score
 from sklearn.model_selection import GroupShuffleSplit
 
+from firms_ids import ensure_observation_ids
+
 ENRICHED = Path("data/processed/firms_osm_enriched.parquet")
 TEMPORAL = Path("data/processed/firms_temporal.parquet")
 EVENTS   = Path("data/processed/firms_thermal_events.parquet")
@@ -51,21 +53,24 @@ def load_all():
     print(f"Seed labeled events: {len(good)}", flush=True)
 
     m = pd.read_parquet(MAP)
+    m["obs_id"] = m["obs_id"].astype(str)
     seed_event_ids = set(good["event_id"])
     seed_obs_ids   = set(m[m["event_id"].isin(seed_event_ids)]["obs_id"])
 
     print("Loading 1.89M enriched observations ...", flush=True)
-    df = pd.read_parquet(ENRICHED)
+    df = ensure_observation_ids(pd.read_parquet(ENRICHED))
     df["temp_diff"] = pd.to_numeric(df["bright_ti4"],errors="coerce") - pd.to_numeric(df["bright_ti5"],errors="coerce")
     df["conf_ord"]  = df["confidence"].map(CONF_ORD).fillna(1).astype(int)
     df["is_night"]  = (df["daynight"]=="N").astype(int)
 
     if TEMPORAL.exists():
-        tmp = pd.read_parquet(TEMPORAL).set_index("obs_id")
-        df  = df.join(tmp[[c for c in tmp.columns if c not in df.columns]])
+        tmp = pd.read_parquet(TEMPORAL)
+        tmp["obs_id"] = tmp["obs_id"].astype(str)
+        extra = [c for c in tmp.columns if c not in df.columns]
+        df = df.merge(tmp[["obs_id", *extra]], on="obs_id", how="left", validate="one_to_one", sort=False)
 
     ev_of = m.set_index("obs_id")["event_id"]
-    df["event_id"] = ev_of.reindex(df.index)
+    df["event_id"] = df["obs_id"].map(ev_of)
 
     lab_map  = good.set_index("event_id")["label"]
     df["y_seed"] = df["event_id"].map(lab_map)
@@ -80,7 +85,7 @@ def load_all():
     df["block"] = df["block"].fillna("unk")
 
     X       = df[FEATURES].apply(pd.to_numeric,errors="coerce").fillna(0).to_numpy(dtype=float)
-    is_seed = df.index.isin(seed_obs_ids) & df["y_seed"].notna()
+    is_seed = df["obs_id"].isin(seed_obs_ids).to_numpy() & df["y_seed"].notna().to_numpy()
 
     seed_pos = np.where(is_seed)[0]
     y_all_seed = df["y_seed"].iloc[seed_pos].to_numpy()
@@ -201,4 +206,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main()

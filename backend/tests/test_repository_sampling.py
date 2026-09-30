@@ -1,6 +1,13 @@
+import io
+import json
+
 import pandas as pd
 
-from app.repositories.detection_repository import ThermalDetectionRepository, _representative_sample
+from app.repositories.detection_repository import (
+    ThermalDetectionRepository,
+    _obs_id_fingerprint,
+    _representative_sample,
+)
 
 
 def test_representative_sample_is_reproducible_with_seed_and_preserves_class_mix():
@@ -51,37 +58,45 @@ def test_unseeded_representative_sample_varies_between_backend_loads():
     assert set(first_load["value"]) != set(next_load["value"])
 
 
-def test_event_map_joins_sampled_rows_by_source_id(monkeypatch):
+def test_event_map_joins_sampled_rows_by_stable_key_not_row_position(monkeypatch):
     repository = ThermalDetectionRepository.__new__(ThermalDetectionRepository)
     repository.total_source_records = 3
+    repository._source_obs_id_fingerprint = _obs_id_fingerprint(["firms-a", "firms-b", "firms-c"])
     source_map = pd.DataFrame({
-        "obs_id": [0, 1, 2],
-        "event_id": ["event-0", "event-1", "event-2"],
+        "obs_id": ["firms-c", "firms-a", "firms-b"],
+        "event_id": ["event-c", "event-a", "event-b"],
     })
     monkeypatch.setattr("app.repositories.detection_repository.os.path.isfile", lambda _path: True)
+    metadata = {"version": 1, "source_record_count": 3, "obs_id_fingerprint": repository._source_obs_id_fingerprint}
+    monkeypatch.setattr("builtins.open", lambda *_args, **_kwargs: io.StringIO(json.dumps(metadata)))
     monkeypatch.setattr(
         "app.repositories.detection_repository.pd.read_parquet",
         lambda *_args, **_kwargs: source_map.copy(),
     )
 
-    sampled = pd.DataFrame({"value": [20, 0]}, index=[2, 0])
+    sampled = pd.DataFrame({"obs_id": ["firms-a", "firms-c"], "value": [20, 0]}, index=[2, 0])
 
-    assert repository._event_ids_for_sample(sampled) == ["event-2", "event-0"]
+    assert repository._event_ids_for_sample(sampled) == ["event-a", "event-c"]
 
 
-def test_event_map_rejects_non_exact_or_invalid_coverage(monkeypatch):
+def test_event_map_rejects_invalid_coverage_and_legacy_rows_without_ids(monkeypatch):
     repository = ThermalDetectionRepository.__new__(ThermalDetectionRepository)
     repository.total_source_records = 3
+    repository._source_obs_id_fingerprint = _obs_id_fingerprint(["a", "b", "c"])
     monkeypatch.setattr("app.repositories.detection_repository.os.path.isfile", lambda _path: True)
+    metadata = {"version": 1, "source_record_count": 3, "obs_id_fingerprint": repository._source_obs_id_fingerprint}
+    monkeypatch.setattr("builtins.open", lambda *_args, **_kwargs: io.StringIO(json.dumps(metadata)))
 
     invalid_maps = [
-        pd.DataFrame({"obs_id": [0, 1, 1], "event_id": ["e0", "e1", "e2"]}),
-        pd.DataFrame({"obs_id": [0, 1.5, 2], "event_id": ["e0", "e1", "e2"]}),
-        pd.DataFrame({"obs_id": [0, 1, 2], "event_id": ["e0", None, "e2"]}),
+        pd.DataFrame({"obs_id": ["a", "b", "b"], "event_id": ["e0", "e1", "e2"]}),
+        pd.DataFrame({"obs_id": ["a", "b", "c"], "event_id": ["e0", None, "e2"]}),
+        pd.DataFrame({"obs_id": ["a", "b"], "event_id": ["e0", "e1"]}),
     ]
     for invalid_map in invalid_maps:
         monkeypatch.setattr(
             "app.repositories.detection_repository.pd.read_parquet",
             lambda *_args, mapping=invalid_map, **_kwargs: mapping.copy(),
         )
-        assert repository._event_ids_for_sample(pd.DataFrame(index=[0, 2])) == [None, None]
+        assert repository._event_ids_for_sample(pd.DataFrame({"obs_id": ["a", "c"]})) == [None, None]
+
+    assert repository._event_ids_for_sample(pd.DataFrame(index=[0, 2])) == [None, None]

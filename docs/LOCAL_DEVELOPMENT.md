@@ -59,11 +59,13 @@ available. On startup, check `GET /api/health` for the selected `data_source`:
 
 Large FIRMS parquet files and trained model artifacts may not be included in a
 GitHub clone. To use the real FIRMS dataset, place the prediction parquet at the
-configured path. The default sample size is 500 detections. The backend chooses
-a new stratified random sample when it starts and keeps that sample consistent
-for the lifetime of that backend process. Restart the backend to get another
-sample; browser refreshes do not resample, so pagination and analytics remain
-consistent. If the data has 500 or fewer records, all records are used.
+configured path. The default map/table sample size is 500 detections. The backend chooses a new
+stratified random sample when it starts and keeps that sample consistent for the
+lifetime of that backend process. Restart the backend to get another sample;
+browser refreshes do not resample. When the prediction parquet is available,
+analytics are aggregated over the full source and retained as compact summaries;
+the map/table remain sampled. The dashboard labels these scopes separately. If
+the data has 500 or fewer records, all records are used.
 
 When trained Tier 2 artifacts are not present, the API can use its heuristic
 fallback. The active mode and any fallback reason are returned by
@@ -98,6 +100,34 @@ PYTHONPATH=".:../ml/src" python -m uvicorn app.main:app --host 127.0.0.1 --port 
 The API is at `http://localhost:8000`; interactive API documentation is at
 `http://localhost:8000/docs`.
 
+### Optional: poll live FIRMS detections
+
+Live polling is off by default. It requires a NASA FIRMS map key, an OSM cache
+covering the selected area, outbound network access, and the Tier 2 model
+artifacts. The key is a secret: set it in the process environment or a local
+`.env` file that is not committed. Do not place it in source code.
+
+For Windows Command Prompt, set values in the same terminal before starting the
+backend:
+
+```bat
+set "LIVE_FIRMS_ENABLED=true"
+set "FIRMS_MAP_KEY=your-private-map-key"
+set "LIVE_FIRMS_SOURCE=VIIRS_NOAA20_SP"
+set "LIVE_FIRMS_BBOX=68,8,97,37"
+set "LIVE_FIRMS_POLL_INTERVAL_SECONDS=900"
+set "LIVE_FIRMS_LOOKBACK_DAYS=2"
+```
+
+For macOS/Linux shell, use `export NAME=value` for those settings. The poller
+runs in the FastAPI lifespan, requests a bounded date window, deduplicates
+observations into `data/processed/live_firms.sqlite3`, and enriches against the
+local `data/raw/osm/*.parquet` cache. It never calls Overpass per detection. A
+record missing brightness, confidence, OSM context, or the trained Tier 2 model
+is still retained, but its status remains unclassified instead of fabricating
+feature values. Check `GET /api/ingestion/status` for poller, OSM, and model
+status. Live API access cannot be validated without your key and network access.
+
 ## Start the frontend
 
 Open a second terminal in the repository root.
@@ -127,6 +157,7 @@ Use a third terminal, or open the URLs directly in a browser:
 
 ```text
 http://localhost:8000/api/health
+http://localhost:8000/api/ingestion/status
 http://localhost:8000/api/detections?page=1&page_size=10
 http://localhost:8000/api/analytics/summary
 http://localhost:8000/api/analytics/temporal
@@ -140,8 +171,8 @@ http://localhost:8000/api/fusion/status
 ```
 
 The detections endpoint should return an `items` array. The health endpoint
-reports the loaded source and record counts. The Vite-proxied health check is
-also available at `http://localhost:5173/api/health`.
+reports the loaded source, map sample, and analytics record counts. The Vite-
+proxied health check is also available at `http://localhost:5173/api/health`.
 
 ## Run the backend and ML tests
 
@@ -193,7 +224,23 @@ backend after training, then check `/api/fusion/status` and the Model Registry
 page.
 
 See [Image Fusion Training](IMAGE_FUSION_TRAINING.md) for the feature sets,
-evaluation details, and leakage caveats.
+evaluation details, and leakage caveats. For an exploratory one-fold spatial
+holdout diagnostic, run:
+
+```bat
+python ml\scripts\evaluate_spatial_holdout.py --holdout-fold 4
+```
+
+In a macOS/Linux shell, use `python ml/scripts/evaluate_spatial_holdout.py --holdout-fold 4`.
+
+The report is written to `ml/models/fusion_v1/spatial_holdout_fold_4_exploratory.json`.
+It is explicitly not an independent final-test estimate because the candidate
+was selected using the same supplied folds. The event map is keyed by stable
+FIRMS `obs_id` values and carries a metadata fingerprint. After downloading and
+OSM-enriching source observations, run `ml/scripts/group_events.py` to build the
+map before temporal features and predictions. Legacy maps without metadata are
+deliberately not joined by row position; rebuild downstream artifacts after
+changing from legacy row-number IDs.
 
 ## Troubleshooting
 

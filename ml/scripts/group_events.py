@@ -15,10 +15,14 @@ future upgrade = DBSCAN/haversine clustering. OSM aggregates use max/first
 from __future__ import annotations
 
 import argparse
+import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+from firms_ids import ensure_observation_ids, fingerprint_observation_ids
 
 ENRICHED = Path("data/processed/firms_osm_enriched.parquet")
 RAW = Path("data/processed/firms_noaa20_sp_bbox_68_8_97_37_2024-06-01_to_2026-05-31.csv")
@@ -36,7 +40,10 @@ def main():
     src = args.input or (str(ENRICHED) if ENRICHED.exists() else str(RAW))
     print(f"loading {src} ...", flush=True)
     df = pd.read_parquet(src) if src.endswith(".parquet") else pd.read_csv(src)
-    df = df.reset_index(drop=True).rename_axis("obs_id").reset_index()
+    df = ensure_observation_ids(df)
+    if df["obs_id"].duplicated().any():
+        raise ValueError("FIRMS obs_id values must be unique before event grouping")
+    source_fingerprint = fingerprint_observation_ids(df["obs_id"])
     df["acq_date"] = pd.to_datetime(df["acq_date"], errors="coerce")
     df["cell_lat"] = (df["latitude"] / args.cell).round().astype(int)
     df["cell_lon"] = (df["longitude"] / args.cell).round().astype(int)
@@ -76,6 +83,15 @@ def main():
     EVENTS_OUT.parent.mkdir(parents=True, exist_ok=True)
     ev.to_parquet(EVENTS_OUT, index=False)
     df[["obs_id", "event_id"]].to_parquet(MAP_OUT, index=False)
+    metadata_path = MAP_OUT.with_suffix(MAP_OUT.suffix + ".metadata.json")
+    metadata_path.write_text(json.dumps({
+        "version": 1,
+        "source_file": str(src),
+        "source_record_count": int(len(df)),
+        "obs_id_fingerprint": source_fingerprint,
+        "created_at_utc": datetime.now(timezone.utc).isoformat(),
+        "join_key": "stable FIRMS obs_id; row order is not used",
+    }, indent=2), encoding="utf-8")
 
     print(f"events={len(ev)} obs={len(df)} "
           f"singletons={(ev['n_detections'] == 1).mean():.3f} "

@@ -14,6 +14,8 @@ import joblib
 import numpy as np
 import pandas as pd
 
+from firms_ids import ensure_observation_ids
+
 ENRICHED = Path("data/processed/firms_osm_enriched.parquet")
 TEMPORAL = Path("data/processed/firms_temporal.parquet")
 MAP = Path("data/processed/firms_obs_event_map.parquet")
@@ -30,7 +32,7 @@ def main():
         return
 
     print("Loading enriched observations (1.1M)...", flush=True)
-    df = pd.read_parquet(ENRICHED)
+    df = ensure_observation_ids(pd.read_parquet(ENRICHED))
     n_total = len(df)
     print(f"Total observations loaded: {n_total}", flush=True)
 
@@ -45,8 +47,10 @@ def main():
 
     if TEMPORAL.exists():
         print("Joining temporal features...", flush=True)
-        tmp = pd.read_parquet(TEMPORAL).set_index("obs_id")
-        df = df.join(tmp[[f for f in tmp.columns if f not in df.columns]])
+        tmp = pd.read_parquet(TEMPORAL)
+        tmp["obs_id"] = tmp["obs_id"].astype(str)
+        extra = [column for column in tmp.columns if column not in df.columns]
+        df = df.merge(tmp[["obs_id", *extra]], on="obs_id", how="left", validate="one_to_one", sort=False)
 
     X_rf = df[rf_features].apply(pd.to_numeric, errors="coerce").fillna(0).to_numpy()
 

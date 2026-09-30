@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.endpoints import router as api_router
 from app.repositories.detection_repository import detection_repo
+from app.services.live_firms_service import live_firms_service
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -12,7 +13,11 @@ async def lifespan(_: FastAPI):
         raise RuntimeError(detection_repo.data_error or "Required FIRMS data did not load.")
     if detection_repo.data_source == "unavailable":
         print(f"[WARNING] API starting without detection data: {detection_repo.data_error}")
-    yield
+    await live_firms_service.start()
+    try:
+        yield
+    finally:
+        await live_firms_service.stop()
 
 
 app = FastAPI(

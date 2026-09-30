@@ -38,6 +38,7 @@ async function fetchJson(endpoint, options = {}) {
 
 export const api = {
   getHealth: () => fetchJson('/health'),
+  getIngestionStatus: () => fetchJson('/ingestion/status'),
 
   getDetections: (params = {}) => {
     const query = new URLSearchParams();

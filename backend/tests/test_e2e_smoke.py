@@ -71,7 +71,7 @@ def test_e2e_full_stack_pipeline():
     # 5. Analytics summary and alerts engine
     analytics_res = client.get("/api/analytics/summary")
     assert analytics_res.status_code == 200
-    assert analytics_res.json()["total_detections"] == health["data_record_count"]
+    assert analytics_res.json()["total_detections"] == health["analytics_record_count"]
 
     # Every analytics widget endpoint must remain usable with empty data too.
     for endpoint in (

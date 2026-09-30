@@ -1,0 +1,111 @@
+<html><head><style>body {
+   color: black;
+}
+</style></head><body><h1 id="frontend-demo-script-3-5-minutes">Frontend demo script: 3–5 minutes</h1>
+<p><strong>Target duration:</strong> about 4 minutes<br><strong>Audience:</strong> reviewers seeing the application for the first time<br><strong>Flow:</strong> Monitoring Console → Detection Detail → Analytics → Alerts → Inference Console → Model Registry</p>
+<h2 id="before-the-demo">Before the demo</h2>
+<ul>
+<li>Start the backend and frontend, then open <code>http://localhost:5173</code>.</li>
+<li>Confirm the header shows the expected API and model status. If possible, check
+<code>/api/health</code> before presenting so you know whether this run uses FIRMS,
+processed, or demo data.</li>
+<li>If showing image fusion, make sure the Model Registry has fusion results and
+choose a detection whose detail page actually shows a fusion CV result.</li>
+<li>The FIRMS view is a stratified sample cached at backend startup. Restarting the
+backend can change which detections appear; refreshing the browser does not.</li>
+<li>Do not describe the dashboard as a live satellite feed. It displays the data
+currently loaded by the backend. Fusion results are spatial-CV validation
+outputs for known, image-covered events, not live image inference.</li>
+</ul>
+<h2 id="spoken-script-and-actions">Spoken script and actions</h2>
+<h3 id="0-00-0-25-introduce-the-problem">0:00–0:25 — Introduce the problem</h3>
+<p><strong>Show:</strong> Monitoring Console and the API/model status in the top bar.</p>
+<blockquote>
+<p>“This is ThermalGuard, a decision-support dashboard for thermal anomalies.
+It brings FIRMS observations together with nearby OpenStreetMap facility
+context, model classifications, persistence indicators, and risk alerts. The
+status badges show whether the API and trained classifier are available.”</p>
+</blockquote>
+<p>If the header shows demo data or heuristic mode, mention that accurately rather
+than presenting the session as a real-data or trained-model deployment.</p>
+<h3 id="0-25-1-10-monitoring-console">0:25–1:10 — Monitoring Console</h3>
+<p><strong>Show:</strong> Summary cards, the map, a class or confidence filter, then select a
+map marker or detection-table row.</p>
+<blockquote>
+<p>“The console gives a quick view of the currently loaded detections. I can filter
+by class, sensor confidence, or region, then inspect a specific point on the
+map. The summary cards and table provide context such as fire radiative power,
+nearest industrial facility, and persistence. Selecting a detection links the
+map and table to the same record.”</p>
+</blockquote>
+<h3 id="1-10-1-55-detection-detail">1:10–1:55 — Detection Detail</h3>
+<p><strong>Action:</strong> Click <strong>Inspect</strong> or <strong>Open full analysis</strong> for a detection.</p>
+<p><strong>Show:</strong> The event summary, thermal characteristics, spatial context, model
+explanation, and—if available—the fusion panel.</p>
+<blockquote>
+<p>“The detail view combines the original observation with its model result. Here
+we can inspect FRP, brightness temperatures, sensor confidence, and nearby OSM
+facilities. The current FIRMS/Tier 2 classifier provides a class, probability
+distribution, and explanation. If this event has an image-fusion result, this
+panel shows its held-out spatial-CV prediction and class probabilities. That
+fusion result is validation evidence, not a second live prediction.”</p>
+</blockquote>
+<p>If the fusion panel is absent, say that the selected event has no image-CV
+coverage; do not imply that the endpoint failed.</p>
+<h3 id="1-55-2-25-analytics-persistence">1:55–2:25 — Analytics &amp; Persistence</h3>
+<p><strong>Action:</strong> Select <strong>Analytics &amp; Persistence</strong> in the sidebar.</p>
+<p><strong>Show:</strong> Temporal trend, classification chart, regional summary, and persistent
+sources.</p>
+<blockquote>
+<p>“Analytics summarizes the loaded detection set: when observations occurred,
+how their classes are distributed, which regions have detections, and which
+sources show recurring activity. These charts describe the current backend
+dataset or sample, rather than a complete global FIRMS archive.”</p>
+</blockquote>
+<h3 id="2-25-2-50-early-warning-rules">2:25–2:50 — Early Warning Rules</h3>
+<p><strong>Action:</strong> Select <strong>Early Warning Rules</strong>, choose a severity filter, and expand
+one alert if available.</p>
+<blockquote>
+<p>“The alert page surfaces rule-engine results, with severity filters and an
+explanation for each alert. I can open the source detection from here. These
+are automated screening rules for review, not confirmed incident reports.”</p>
+</blockquote>
+<p>If no alerts match, show the empty state and note that no loaded records currently
+trigger that filter.</p>
+<h3 id="2-50-3-30-inference-console">2:50–3:30 — Inference Console</h3>
+<p><strong>Action:</strong> Select <strong>Inference Console</strong>, choose the <strong>Refinery Flare Stack</strong>
+preset, and click <strong>Execute inference</strong>.</p>
+<blockquote>
+<p>“The inference console lets an analyst submit a feature vector without leaving
+the app. I’ll use a preset scenario, then review the predicted class,
+probabilities, confidence, and contributing features. This preset is an
+illustrative input—not a new satellite observation—and inference uses the
+currently active Tier 2 model or the indicated fallback.”</p>
+</blockquote>
+<h3 id="3-30-4-15-model-registry-and-close">3:30–4:15 — Model Registry and close</h3>
+<p><strong>Action:</strong> Select <strong>Model Registry</strong>. Show the active model and, if fusion
+training artifacts are available, the A–D fusion ablation table.</p>
+<blockquote>
+<p>“The registry distinguishes the active FIRMS/Tier 2 deployment from the
+separate image-fusion experiment. The ablation table compares the tabular
+baseline with spectral and image-feature variants using the same estimator and
+spatial folds. In this run, frozen-image features improved the trusted
+no-flare score over the tabular baseline; the selected score is still a
+cross-validation result, not an independent final test. Overall, the app
+connects detection review, spatial context, analytics, rule alerts, and model
+evaluation in one frontend.”</p>
+</blockquote>
+<p>If the comparison table is missing, fusion training artifacts have not been
+loaded; finish with the active Tier 2 model and its registry metrics instead.</p>
+<h2 id="features-to-prioritize-if-time-is-short">Features to prioritize if time is short</h2>
+<p>For a three-minute version, prioritize these five moments:</p>
+<ol>
+<li>Header health/model status and the monitoring map.</li>
+<li>One detection’s FRP, OSM context, and Tier 2 explanation.</li>
+<li>The analytics classification or persistence view.</li>
+<li>A sample inference in the Inference Console.</li>
+<li>The Model Registry’s active model and matched-estimator A–D comparison.</li>
+</ol>
+<p>Alerts are a good optional stop if the audience is focused on operational
+triage. Avoid spending time reading every table row or raw JSON panel.</p>
+</body></html>

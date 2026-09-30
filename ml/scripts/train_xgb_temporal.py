@@ -16,6 +16,8 @@ from sklearn.metrics import classification_report, f1_score
 from sklearn.model_selection import GroupShuffleSplit
 from xgboost import XGBClassifier
 
+from firms_ids import ensure_observation_ids
+
 ENRICHED = Path("data/processed/firms_osm_enriched.parquet")
 TEMPORAL = Path("data/processed/firms_temporal.parquet")
 EVENTS = Path("data/processed/firms_thermal_events.parquet")
@@ -53,18 +55,18 @@ def main():
     print(f"labeled events (>{args.min_conf}): {len(good)}", flush=True)
 
     m = pd.read_parquet(MAP)
-    obs_ids = m[m["event_id"].isin(set(good["event_id"]))]["obs_id"].to_numpy()
-    df = pd.read_parquet(ENRICHED)
-    sub = df.iloc[obs_ids].copy()
+    m["obs_id"] = m["obs_id"].astype(str)
+    df = ensure_observation_ids(pd.read_parquet(ENRICHED))
+    labeled_map = m[m["event_id"].isin(set(good["event_id"]))]
+    sub = df.merge(labeled_map, on="obs_id", how="inner", validate="one_to_one")
     sub["temp_diff"] = (pd.to_numeric(sub["bright_ti4"], errors="coerce")
                         - pd.to_numeric(sub["bright_ti5"], errors="coerce"))
     sub["conf_ord"] = sub["confidence"].map(CONF_ORD).fillna(1).astype(int)
     sub["is_night"] = (sub["daynight"] == "N").astype(int)
-    tmp = pd.read_parquet(TEMPORAL).set_index("obs_id")
-    sub = sub.join(tmp[TEMP_FEATURES])  # both indexed by obs_id
+    tmp = pd.read_parquet(TEMPORAL)
+    tmp["obs_id"] = tmp["obs_id"].astype(str)
+    sub = sub.merge(tmp[["obs_id", *TEMP_FEATURES]], on="obs_id", how="left", validate="one_to_one")
     lab = good.set_index("event_id")["label"]
-    ev_of = m.set_index("obs_id")["event_id"]
-    sub["event_id"] = ev_of.loc[sub.index].to_numpy()
     sub["y"] = sub["event_id"].map(lab)
     sub = sub.dropna(subset=["y"])
     events = pd.read_parquet(EVENTS, columns=["event_id", "centroid_lat", "centroid_lon"])

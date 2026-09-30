@@ -136,7 +136,11 @@ class ModelInferenceService:
             "bright_ti5": float(input_data.bright_t31),
             "temp_diff": float(input_data.brightness) - float(input_data.bright_t31),
             "frp": float(input_data.frp),
-            "conf_ord": min(2, max(0, int(confidence / 33))),
+            "conf_ord": (
+                input_data.confidence_ordinal
+                if input_data.confidence_ordinal is not None
+                else 0 if confidence <= 40 else 1 if confidence <= 80 else 2
+            ),
             "is_night": int(input_data.daynight == "N"),
             "nearest_osm_distance_km": float(input_data.dist_to_industrial),
             "industrial_count_1km": input_data.industrial_count_1km,

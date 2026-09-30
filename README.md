@@ -2,7 +2,7 @@
 
 An enterprise-grade, geospatial decision-support platform built to detect, classify, and monitor industrial fires, persistent thermal sources (refineries, flare stacks, gas terminals, chemical works), wildfires, and agricultural burnings using satellite imagery, NASA FIRMS thermal observations, and OpenStreetMap (OSM) spatial context.
 
-For a current local setup guide (Windows Command Prompt and macOS/Linux), see [Run the app locally](docs/LOCAL_DEVELOPMENT.md).
+For a current local setup guide (Windows Command Prompt and macOS/Linux), see [Run the app locally](docs/LOCAL_DEVELOPMENT.md). For a short frontend presentation, see the [3–5 minute demo script](docs/FRONTEND_DEMO_SCRIPT.md).
 
 ---
 

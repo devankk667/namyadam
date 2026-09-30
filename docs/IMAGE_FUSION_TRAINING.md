@@ -73,8 +73,12 @@ selects the best tabular-plus-image candidate from the trusted, no-flare OOF
 metric and joins those **held-out** predictions to dashboard detections through
 `data/processed/firms_obs_event_map.parquet` (`obs_id` → `event_id`). That join
 is accepted only when the map exactly covers the prediction parquet's source
-rows. Restart the backend after training, then check `/api/fusion/status` and
-open the Model Registry and detection detail pages.
+rows. `/api/fusion/status` also exposes the trained A-D ablation metrics. The
+Model Registry compares those scores for the selected estimator only, so the
+baseline and image feature sets use the same spatial folds and trusted-event
+cohort. A missing table value means that feature set was not included in that
+training run. Restart the backend after training, then check `/api/fusion/status`
+and open the Model Registry and detection detail pages.
 
 The UI calls these CV holdout results. It does not display the final
 all-labeled fitted artifact's in-sample predictions as validated predictions,
