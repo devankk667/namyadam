@@ -1,0 +1,32 @@
+{
+  "rounds": [
+    {
+      "round": 0,
+      "train_obs": 5922,
+      "pseudo_obs": 0,
+      "threshold": null,
+      "macro_f1": 0.7388
+    },
+    {
+      "round": 1,
+      "train_obs": 66559,
+      "pseudo_obs": 60637,
+      "threshold": 0.95,
+      "macro_f1": 0.75
+    },
+    {
+      "round": 2,
+      "train_obs": 126841,
+      "pseudo_obs": 60282,
+      "threshold": 0.9299999999999999,
+      "macro_f1": 0.75
+    },
+    {
+      "round": 3,
+      "train_obs": 177325,
+      "pseudo_obs": 50484,
+      "threshold": 0.9099999999999999,
+      "macro_f1": 0.75
+    }
+  ]
+}

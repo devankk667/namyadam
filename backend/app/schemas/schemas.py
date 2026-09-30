@@ -44,6 +44,13 @@ class PredictionInput(BaseModel):
     persistence_score: float = Field(0.85, json_schema_extra={"example": 0.85})
     detection_count_30d: int = Field(15, json_schema_extra={"example": 15})
     daynight: str = Field("N", json_schema_extra={"example": "N"})
+    industrial_count_1km: Optional[int] = None
+    power_plant_count_5km: Optional[int] = None
+    quarry_count_5km: Optional[int] = None
+    flare_count_5km: Optional[int] = None
+    petroleum_well_count_5km: Optional[int] = None
+    industrial_landuse_nearby: Optional[int] = None
+    available_model_features: Optional[List[str]] = None
 
 class PredictionExplanation(BaseModel):
     top_contributing_features: Dict[str, float]
@@ -57,6 +64,8 @@ class PredictionOutput(BaseModel):
     class_probabilities: Dict[str, float]
     model_version: str
     explanation: PredictionExplanation
+    inference_mode: str = "trained"
+    fallback_reason: Optional[str] = None
 
 class AnalyticsSummary(BaseModel):
     total_detections: int
@@ -81,6 +90,9 @@ class ModelStatus(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
 
     model_loaded: bool
+    inference_mode: str = "trained"
+    fallback_reason: Optional[str] = None
+    active_model_key: str = ""
     model_name: str
     model_version: str
     macro_f1: float

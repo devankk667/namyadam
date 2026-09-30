@@ -3,6 +3,7 @@ uvicorn[standard]>=0.28.0
 pydantic>=2.6.4
 pydantic-settings>=2.2.1
 pandas>=2.2.1
+pyarrow>=15.0.0
 numpy>=1.26.4
 scikit-learn>=1.4.1
 xgboost>=2.0.3

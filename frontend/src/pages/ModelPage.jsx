@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../services/api';
 import { BarChart2, Award, Cpu } from 'lucide-react';
-import { EmptyState, LoadingState, Metric, PageHeader, Panel, ProbabilityBar, StatusBadge } from '../components/ui';
+import { EmptyState, ErrorState, LoadingState, Metric, PageHeader, Panel, ProbabilityBar, StatusBadge } from '../components/ui';
 
 const CANDIDATE_LABELS = {
   random_forest: 'Random Forest Classifier',
@@ -19,22 +19,46 @@ function candidateStatus(key, isDeployed) {
 
 export default function ModelPage() {
   const [modelStatus, setModelStatus] = useState(null);
+  const [availableModels, setAvailableModels] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [switching, setSwitching] = useState(false);
+  const [error, setError] = useState(null);
+  const [notice, setNotice] = useState(null);
+
+  const loadModelInfo = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [status, available] = await Promise.all([api.getModels(), api.getAvailableModels()]);
+      setModelStatus(status);
+      setAvailableModels(Array.isArray(available.available_models) ? available.available_models : []);
+    } catch (err) {
+      setError(err.message || 'Model registry could not be loaded.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    async function loadModelInfo() {
-      setLoading(true);
-      try {
-        const res = await api.getModels();
-        setModelStatus(res);
-      } catch (err) {
-        console.error('Model info load error:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
     loadModelInfo();
-  }, []);
+  }, [loadModelInfo]);
+
+  async function handleSwitchModel(event) {
+    const modelName = event.target.value;
+    if (!modelName || modelName === modelStatus?.active_model_key) return;
+    setSwitching(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const result = await api.switchModel(modelName);
+      setNotice(`Active model: ${result.description}`);
+      await loadModelInfo();
+    } catch (err) {
+      setError(err.message || 'Could not switch model.');
+    } finally {
+      setSwitching(false);
+    }
+  }
 
   const importances = modelStatus?.feature_importances || {};
   const sortedFeatures = Object.entries(importances).sort((a, b) => b[1] - a[1]).slice(0, 10);
@@ -43,9 +67,9 @@ export default function ModelPage() {
     .map(([key, metrics]) => ({
       key,
       name: CANDIDATE_LABELS[key] || key,
-      macroF1: metrics.macro_f1,
-      rocAuc: metrics.roc_auc_ovr,
-      deployed: key === modelStatus?.model_name,
+      macroF1: Number(metrics?.macro_f1 || 0),
+      rocAuc: Number(metrics?.roc_auc_ovr || 0),
+      deployed: key === modelStatus?.active_model_key,
     }))
     .sort((a, b) => b.macroF1 - a.macroF1);
 
@@ -61,16 +85,26 @@ export default function ModelPage() {
         }
       />
 
+      {notice && <div className="border border-status-success/30 bg-status-success/5 px-3 py-2 text-[11px] text-status-success">{notice}</div>}
+      {error && <ErrorState title="Model registry error" message={error} action={<button onClick={loadModelInfo} className="mt-2 px-3 py-1.5 border border-line text-[11px]">Retry</button>} />}
+
       {loading ? (
         <Panel><LoadingState label="loading model registry…" /></Panel>
-      ) : (
+      ) : modelStatus && (
         <>
           <Panel title="Active Deployment" eyebrow="analytics/model" icon={Cpu} noPadding>
+            {availableModels.length > 0 && <div className="flex items-center gap-2 border-b border-line px-3 py-2 text-[11px]">
+              <label htmlFor="active-model" className="text-ink-muted">Active artifact</label>
+              <select id="active-model" value={availableModels.find((model) => model.active)?.name || ''} onChange={handleSwitchModel} disabled={switching} className="bg-panel2 border border-line px-2 py-1 text-ink-primary disabled:opacity-60">
+                {availableModels.map((model) => <option key={model.name} value={model.name}>{model.description} (F1 {Number(model.macro_f1 || 0).toFixed(3)}){model.compatible_with_prediction_form ? '' : ' — incomplete form features'}</option>)}
+              </select>
+              {switching && <span className="text-ink-muted">switching…</span>}
+            </div>}
             <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-line">
-              <Metric label="Active Algorithm" value={modelStatus?.model_name || 'Random Forest'} mono={false} caption={`v${modelStatus?.model_version || '1.0.0'}`} />
-              <Metric label="Spatial Macro F1" value={`${modelStatus?.macro_f1 ? (modelStatus.macro_f1 * 100).toFixed(2) : '97.25'}%`} tone="info" caption="unseen spatial groups" />
-              <Metric label="Train / Test Split" value={`${modelStatus?.train_samples || 872} / ${modelStatus?.test_samples || 327}`} caption="GroupKFold" />
-              <Metric label="Supported Classes" value={modelStatus?.supported_classes?.length || 5} tone="accent" caption="multi-class" />
+              <Metric label="Active Algorithm" value={modelStatus?.model_name || 'Unavailable'} mono={false} caption={`v${modelStatus?.model_version || '—'}`} />
+              <Metric label="Spatial Macro F1" value={modelStatus?.model_loaded ? `${(modelStatus.macro_f1 * 100).toFixed(2)}%` : '—'} tone="info" caption={modelStatus?.split_method || 'not available'} />
+              <Metric label="Training observations" value={modelStatus?.train_samples ?? 0} caption={modelStatus?.split_method || 'not available'} />
+              <Metric label="Supported Classes" value={modelStatus?.supported_classes?.length ?? 0} tone="accent" caption="multi-class" />
             </div>
           </Panel>
 
@@ -83,7 +117,7 @@ export default function ModelPage() {
                   ))}
                 </div>
               ) : (
-                <EmptyState message="No trained model artifact is loaded — feature importances are unavailable while the API is serving heuristic fallback predictions." />
+                <EmptyState message={modelStatus?.fallback_reason || 'No trained model artifact is loaded — feature importances are unavailable while the API is serving heuristic fallback predictions.'} />
               )}
             </Panel>
 

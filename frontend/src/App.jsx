@@ -13,15 +13,22 @@ export default function App() {
   const [health, setHealth] = useState(null);
 
   useEffect(() => {
-    async function checkHealth() {
+    let active = true;
+    const checkHealth = async () => {
       try {
         const res = await api.getHealth();
-        setHealth(res);
+        if (active) setHealth(res);
       } catch (err) {
-        console.error("Health check error:", err);
+        console.error('Health check error:', err);
+        if (active) setHealth((previous) => previous || { status: 'unavailable' });
       }
-    }
+    };
     checkHealth();
+    const interval = window.setInterval(checkHealth, 15000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
   }, []);
 
   return (

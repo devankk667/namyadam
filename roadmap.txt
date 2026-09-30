@@ -1,0 +1,1410 @@
+# PROJECT: AI-Based Detection and Classification of Industrial Fires and Persistent Thermal Sources
+
+You are the lead engineer responsible for building a **presentation-ready full-stack ML/DL prototype** for this project.
+
+The repository is completely empty.
+
+Build the project from scratch with three connected layers:
+
+1. **ML/DL pipeline**
+2. **Stable FastAPI backend**
+3. **React frontend/dashboard**
+
+The current objective is a functional prototype that can be demonstrated end-to-end.
+
+## CORE PROJECT OBJECTIVE
+
+The system should eventually identify and classify thermal anomalies using:
+
+* NASA FIRMS thermal anomaly data
+* OpenStreetMap/geospatial context
+* satellite imagery/satellite-derived information
+
+The long-term classification objective includes:
+
+* Industrial fire
+* Persistent industrial thermal source
+* Wildfire
+* Agricultural burning
+* Other thermal anomaly
+
+The system should eventually support:
+
+* thermal anomaly detection
+* classification
+* persistence analysis
+* anomaly detection
+* confidence scoring
+* geospatial visualization
+* explainability
+
+However, **do not attempt to implement everything simultaneously.**
+
+The first priority is:
+
+> Build a stable presentation-ready application around a scientifically defensible ML baseline, with architecture that can progressively evolve into the multimodal ML/DL system.
+
+---
+
+# 1. TECHNOLOGY STACK
+
+## Backend
+
+Use:
+
+* Python
+* FastAPI
+* Pydantic
+* Uvicorn
+* scikit-learn
+* XGBoost where appropriate
+* PyTorch for DL stages
+* pandas
+* NumPy
+* GeoPandas/Shapely where required
+
+Do NOT add PostgreSQL, SQLAlchemy, or Alembic yet.
+
+Use an abstraction that allows persistent storage to be introduced later without rewriting business logic.
+
+---
+
+## Frontend
+
+Use:
+
+* React
+* Vite
+* JavaScript or TypeScript
+* Tailwind CSS
+* Recharts or another lightweight charting library
+* Leaflet/react-leaflet or another suitable mapping library
+
+The frontend must look like a **real geospatial monitoring dashboard**, not a collection of raw forms.
+
+---
+
+# 2. IMPORTANT: EMPTY REPOSITORY
+
+The repository contains nothing.
+
+You must create:
+
+* project structure
+* backend
+* frontend
+* ML pipeline
+* configuration
+* tests
+* documentation
+* scripts
+* sample/demo data handling
+* model artifact handling
+
+Do not assume that a dataset already exists.
+
+---
+
+# 3. DATA ACQUISITION POLICY
+
+Investigate suitable publicly available sources for:
+
+### FIRMS
+
+Determine the most practical NASA FIRMS data source/product.
+
+Document:
+
+* source
+* access method
+* required credentials if any
+* fields
+* temporal coverage
+* geographic coverage
+* limitations
+
+### OSM
+
+Determine a practical method for obtaining relevant industrial/geospatial information.
+
+Potential categories:
+
+* industrial facilities
+* power plants
+* refineries
+* mines
+* LNG facilities
+* factories
+* other industrial sites
+
+### Satellite imagery
+
+Determine a practical publicly accessible source.
+
+Do not make the entire application dependent on a difficult or unreliable API.
+
+If external data cannot be automatically downloaded:
+
+* create a documented acquisition script
+* create a clearly labelled sample/demo dataset
+* keep the real-data pipeline intact
+* NEVER fabricate real-world model results
+
+---
+
+# 4. DATA STRATEGY FOR PRESENTATION
+
+The application must work even if external APIs are unavailable during a presentation.
+
+Therefore create a **Demo Data Mode**.
+
+Example:
+
+```
+DEMO_MODE=true
+```
+
+When enabled:
+
+* load a small bundled/sample dataset
+* provide realistic thermal anomaly records
+* provide geographic coordinates
+* provide classifications where legitimate for demonstration
+* allow the frontend to operate normally
+* allow predictions to be demonstrated
+
+Clearly label demo/sample information in the UI.
+
+Example:
+
+```
+DEMO DATA
+```
+
+Do not present synthetic/demo predictions as real-world validated predictions.
+
+The application should also support:
+
+```
+REAL_DATA_MODE
+```
+
+when actual datasets are supplied.
+
+---
+
+# 5. ARCHITECTURE
+
+Use a modular architecture.
+
+Recommended structure:
+
+```
+project/
+│
+├── README.md
+├── .gitignore
+├── .env.example
+├── docker-compose.yml
+│
+├── backend/
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── api/
+│   │   ├── schemas/
+│   │   ├── services/
+│   │   ├── repositories/
+│   │   ├── models/
+│   │   ├── core/
+│   │   └── utils/
+│   └── tests/
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── layouts/
+│   │   ├── services/
+│   │   ├── hooks/
+│   │   ├── utils/
+│   │   └── data/
+│   └── ...
+│
+├── ml/
+│   ├── data/
+│   ├── notebooks/
+│   ├── src/
+│   ├── models/
+│   ├── scripts/
+│   └── tests/
+│
+├── data/
+│   ├── demo/
+│   ├── raw/
+│   ├── processed/
+│   └── external/
+│
+└── docs/
+```
+
+You may improve this structure if necessary.
+
+---
+
+# 6. BACKEND — PRESENTATION-READY API
+
+The backend must NOT simply expose the ML script.
+
+Create a proper service-oriented FastAPI backend.
+
+Core API areas:
+
+```
+/api/health
+/api/detections
+/api/predictions
+/api/analytics
+/api/alerts
+/api/models
+/api/map
+/api/demo
+```
+
+---
+
+# 7. BACKEND HEALTH
+
+Implement:
+
+```
+GET /api/health
+```
+
+Return:
+
+* API status
+* application version
+* ML model status
+* data mode
+* timestamp
+
+Example conceptual response:
+
+```
+{
+  "status": "healthy",
+  "model_loaded": true,
+  "data_mode": "demo"
+}
+```
+
+This endpoint should be reliable and easy to demonstrate.
+
+---
+
+# 8. THERMAL DETECTION SERVICE
+
+Create a detection service that can return thermal anomaly records.
+
+Each record should contain only fields actually supported by the available dataset.
+
+Potential fields:
+
+* detection ID
+* latitude
+* longitude
+* acquisition time
+* FRP
+* brightness temperature
+* confidence
+* satellite
+* source
+
+Provide:
+
+```
+GET /api/detections
+```
+
+Support:
+
+* pagination
+* date filtering
+* geographic filtering where practical
+* confidence filtering
+* search/filter by classification when available
+
+---
+
+# 9. ML PREDICTION SERVICE
+
+Create a dedicated prediction service.
+
+Example:
+
+```
+POST /api/predictions
+```
+
+Input:
+
+* thermal features
+* optional geospatial features
+* optional image reference
+
+Output:
+
+* predicted class
+* confidence
+* model version
+* feature/input summary
+* explanation when available
+
+The backend should load the trained model once rather than retraining on every request.
+
+Implement model lifecycle:
+
+```
+startup
+   ↓
+load model
+   ↓
+validate model
+   ↓
+serve predictions
+```
+
+If the model is unavailable, the API should return a clear controlled error instead of crashing.
+
+---
+
+# 10. ANALYTICS SERVICE
+
+Create:
+
+```
+GET /api/analytics/summary
+```
+
+Return metrics such as:
+
+* total detections
+* industrial-associated detections
+* active thermal sources
+* persistent sources
+* high-confidence events
+* high-risk events
+
+Create endpoints for:
+
+```
+/api/analytics/temporal
+/api/analytics/classification
+/api/analytics/regions
+/api/analytics/persistence
+```
+
+The analytics must be derived from available data rather than hardcoded numbers.
+
+Demo-mode data may be used when explicitly enabled.
+
+---
+
+# 11. PERSISTENCE ANALYSIS
+
+Implement a backend service for grouping detections spatially/temporally.
+
+Determine whether repeated detections correspond to:
+
+* transient event
+* recurring event
+* persistent thermal source
+
+Start with transparent statistical rules/features.
+
+Do not claim that a simple persistence heuristic is a scientifically validated industrial-source detector.
+
+---
+
+# 12. ALERT SERVICE
+
+Create an alert engine.
+
+Potential alert types:
+
+```
+HIGH_CONFIDENCE_INDUSTRIAL_FIRE
+PERSISTENT_THERMAL_SOURCE
+UNUSUAL_THERMAL_ACTIVITY
+HIGH_FRP_EVENT
+```
+
+Each alert should contain:
+
+* ID
+* timestamp
+* location
+* severity
+* type
+* explanation
+* related detection
+
+Expose:
+
+```
+GET /api/alerts
+```
+
+---
+
+# 13. ML PIPELINE — PHASE 1
+
+First build the data pipeline.
+
+Workflow:
+
+```
+raw data
+   ↓
+validation
+   ↓
+cleaning
+   ↓
+feature extraction
+   ↓
+labeling
+   ↓
+leakage-safe split
+   ↓
+training dataset
+```
+
+Create EDA.
+
+Investigate:
+
+* class distribution
+* geographic distribution
+* temporal distribution
+* missing data
+* duplicate data
+* FRP
+* brightness temperature
+* confidence
+* spatial relationships
+
+---
+
+# 14. LABEL STRATEGY
+
+Do not blindly create labels.
+
+Investigate what can actually be labelled reliably.
+
+If a robust multi-class dataset is unavailable, start with a defensible binary task.
+
+For example:
+
+```
+industrial-associated
+vs
+non-industrial
+```
+
+Only introduce:
+
+```
+industrial fire
+industrial thermal source
+wildfire
+agricultural burning
+other
+```
+
+when the dataset actually supports these distinctions.
+
+Document all assumptions.
+
+---
+
+# 15. LEAKAGE-SAFE SPLIT
+
+Because this is a geospatial problem, avoid naive random row splitting.
+
+Prefer:
+
+* geographic split
+* facility-aware split
+* spatial clustering
+* temporal separation where appropriate
+
+The final test set should represent genuinely unseen locations/events as much as possible.
+
+Document the methodology.
+
+---
+
+# 16. ML BASELINE
+
+Start with FIRMS-derived features.
+
+Train:
+
+* Logistic Regression
+* Random Forest
+* XGBoost
+
+Evaluate using:
+
+* Precision
+* Recall
+* F1
+* Macro-F1 where applicable
+* Confusion matrix
+* ROC-AUC where appropriate
+* PR-AUC where appropriate
+
+Save:
+
+* preprocessing pipeline
+* trained model
+* metrics
+* configuration
+* model metadata
+
+Create:
+
+```
+ml/models/best_model/
+```
+
+The backend must be able to load this model.
+
+---
+
+# 17. OSM / GEOSPATIAL FEATURES
+
+After FIRMS-only baseline works, add:
+
+* distance to nearest industrial facility
+* nearby industrial facility count
+* facility category
+* distance to relevant infrastructure
+* land-use/context features where available
+
+Compare:
+
+```
+FIRMS only
+```
+
+against:
+
+```
+FIRMS + geospatial context
+```
+
+Do not claim improvement unless measured.
+
+---
+
+# 18. CNN BASELINE
+
+Only after the tabular baseline is functional.
+
+Use satellite image patches where data is practically available.
+
+Pipeline:
+
+```
+satellite image
+      ↓
+crop
+      ↓
+preprocessing
+      ↓
+transfer-learning CNN
+      ↓
+classification
+```
+
+Start with:
+
+* ResNet18/50
+* EfficientNet
+
+Do not train a huge model from scratch.
+
+---
+
+# 19. MULTIMODAL MODEL
+
+Eventually implement:
+
+```
+FIRMS ───────→ MLP ───┐
+                      │
+OSM ─────────→ MLP ──┼→ Fusion → Class
+                      │
+Satellite ───→ CNN ─┘
+```
+
+Compare:
+
+```
+FIRMS
+FIRMS + OSM
+Satellite
+FIRMS + OSM + Satellite
+```
+
+This should become the main advanced ML experiment.
+
+---
+
+# 20. FRONTEND — PRESENTATION DASHBOARD
+
+Build a polished geospatial monitoring dashboard.
+
+Primary page:
+
+```
+/dashboard
+```
+
+Layout:
+
+```
+┌─────────────────────────────────────────────┐
+│ Industrial Thermal Monitoring               │
+│ Data Mode • Model Status • Last Update      │
+├─────────┬─────────┬─────────┬───────────────┤
+│ Events  │ Fires   │Sources  │ Alerts        │
+├─────────┴─────────┴─────────┴───────────────┤
+│                                             │
+│              INTERACTIVE MAP                │
+│                                             │
+│     🔴 Industrial Fire                     │
+│     🟠 Thermal Source                      │
+│     🟡 Other Anomaly                       │
+│                                             │
+├─────────────────────────┬───────────────────┤
+│ Thermal Activity Trend  │ Classification    │
+│                         │ Distribution      │
+├─────────────────────────┴───────────────────┤
+│ Recent Events / Alerts                      │
+└─────────────────────────────────────────────┘
+```
+
+The dashboard should immediately communicate what the system does.
+
+---
+
+# 21. MAP INTERFACE
+
+Implement an interactive map.
+
+Features:
+
+* thermal anomaly markers
+* classification-based markers
+* clustering where useful
+* popup details
+* confidence
+* FRP
+* timestamp
+* persistence status
+* alert status
+
+Clicking an event should open an event-detail panel.
+
+---
+
+# 22. EVENT DETAILS PAGE
+
+Create:
+
+```
+/detections/:id
+```
+
+Display:
+
+* location
+* time
+* thermal characteristics
+* predicted classification
+* confidence
+* persistence
+* nearby industrial context
+* model explanation
+* satellite image when available
+
+Example:
+
+```
+Prediction
+Industrial Thermal Source
+
+Confidence
+91%
+
+Persistence
+High
+
+FRP
+...
+
+Nearest Industrial Facility
+...
+```
+
+Do not fabricate fields if the real dataset doesn't provide them.
+
+---
+
+# 23. ANALYTICS PAGE
+
+Create:
+
+```
+/analytics
+```
+
+Include:
+
+* temporal trends
+* classification distribution
+* regional distribution
+* persistence statistics
+* FRP distribution
+* confidence distribution
+
+Provide:
+
+* date filters
+* classification filters
+* region filters where practical
+
+---
+
+# 24. ALERTS PAGE
+
+Create:
+
+```
+/alerts
+```
+
+Display:
+
+* severity
+* event type
+* location
+* time
+* confidence
+* explanation
+
+Allow filtering by:
+
+* severity
+* type
+* date
+
+---
+
+# 25. MODEL PAGE
+
+Create:
+
+```
+/model
+```
+
+Show:
+
+* model name
+* model version
+* model type
+* training status
+* supported classes
+* evaluation metrics
+* dataset information
+* feature groups
+
+Example:
+
+```
+Model
+XGBoost Baseline
+
+F1
+0.xx
+
+Features
+FIRMS + OSM
+```
+
+This page should clearly distinguish:
+
+```
+BASELINE
+EXPERIMENTAL
+DEMO
+```
+
+---
+
+# 26. PREDICTION DEMO
+
+Create a presentation-friendly prediction interface.
+
+Route:
+
+```
+/predict
+```
+
+Allow the user to:
+
+* select a sample thermal event
+* enter/modify supported numerical features
+* run prediction
+* view classification
+* view confidence
+* view explanation
+
+For demo mode, provide several prepared example events.
+
+Example:
+
+```
+[Industrial Example]
+[Wildfire Example]
+[Persistent Source Example]
+```
+
+This allows the entire ML pipeline to be demonstrated without requiring a live external API.
+
+---
+
+# 27. FRONTEND API ARCHITECTURE
+
+Do NOT scatter fetch calls throughout React components.
+
+Create a centralized API layer:
+
+```
+services/
+    api.js
+    detections.js
+    predictions.js
+    analytics.js
+    alerts.js
+    model.js
+```
+
+Use reusable hooks where appropriate.
+
+Handle:
+
+* loading
+* API errors
+* empty results
+* retries where appropriate
+* offline/demo mode
+
+---
+
+# 28. FRONTEND QUALITY
+
+The UI must have:
+
+* consistent spacing
+* responsive layout
+* clear typography
+* useful visual hierarchy
+* loading skeletons
+* empty states
+* error states
+* meaningful icons
+* tooltips where needed
+* accessible controls
+
+Avoid unnecessary visual clutter.
+
+This is a **technical monitoring dashboard**, not a generic admin panel.
+
+---
+
+# 29. DEMO MODE
+
+The entire application must work using:
+
+```
+DEMO_MODE=true
+```
+
+The presentation flow should be:
+
+```
+Open Dashboard
+     ↓
+See thermal events
+     ↓
+Click event
+     ↓
+View classification
+     ↓
+View confidence/explanation
+     ↓
+Open map
+     ↓
+View persistence
+     ↓
+Open analytics
+     ↓
+Open model metrics
+     ↓
+Run another prediction
+```
+
+The demo must not depend on internet connectivity except where genuinely necessary.
+
+---
+
+# 30. TESTING
+
+Backend tests:
+
+* health endpoint
+* detection endpoint
+* prediction endpoint
+* invalid input
+* model loading
+* analytics
+* persistence logic
+* alert generation
+
+ML tests:
+
+* preprocessing
+* feature extraction
+* split integrity
+* model loading
+* inference
+
+Frontend tests where practical:
+
+* routing
+* API states
+* dashboard rendering
+* prediction flow
+* event details
+
+Also create an end-to-end smoke test:
+
+```
+frontend
+   ↓
+API
+   ↓
+model
+   ↓
+prediction
+   ↓
+frontend result
+```
+
+---
+
+# 31. DOCKER
+
+Create a simple development setup.
+
+At minimum:
+
+```
+frontend
+backend
+```
+
+The ML model/artifacts should be accessible to the backend.
+
+Do NOT introduce PostgreSQL yet.
+
+The architecture should make it possible to add:
+
+```
+PostgreSQL
+```
+
+later without changing the frontend API contract or business logic.
+
+---
+
+# 32. DOCUMENTATION
+
+README must contain:
+
+* project overview
+* architecture
+* setup
+* frontend setup
+* backend setup
+* ML setup
+* data acquisition
+* demo mode
+* real-data mode
+* API documentation
+* model training
+* inference
+* testing
+* limitations
+* future roadmap
+
+Also document:
+
+```
+What is real?
+What is demo data?
+What is trained?
+What is heuristic?
+What is planned?
+```
+
+Never blur these distinctions.
+
+---
+
+# 33. STRICT DEVELOPMENT ORDER
+
+Follow this sequence.
+
+## Milestone 1 — Full-stack skeleton
+
+Build:
+
+```
+React
+  ↓
+FastAPI
+  ↓
+Demo data
+```
+
+with:
+
+* dashboard
+* map
+* detection list
+* event detail
+* analytics placeholders
+* API health
+
+Everything should run.
+
+---
+
+## Milestone 2 — ML data foundation
+
+Build:
+
+```
+Data acquisition
+Data validation
+EDA
+Label strategy
+Spatially safe split
+```
+
+Do not train deep learning yet.
+
+---
+
+## Milestone 3 — Real ML baseline
+
+Build:
+
+```
+FIRMS features
+   ↓
+Logistic Regression
+   ↓
+Random Forest
+   ↓
+XGBoost
+   ↓
+Evaluation
+   ↓
+Saved model
+```
+
+Connect the best model to:
+
+```
+POST /api/predictions
+```
+
+---
+
+## Milestone 4 — Connect ML to frontend
+
+Frontend should display:
+
+* prediction
+* confidence
+* model version
+* event information
+* basic explanation
+
+The user should be able to demonstrate:
+
+```
+Event → ML prediction → UI result
+```
+
+---
+
+## Milestone 5 — Geospatial intelligence
+
+Add:
+
+* OSM features
+* spatial context
+* map enrichment
+* persistence logic
+
+Update the backend and frontend accordingly.
+
+---
+
+## Milestone 6 — Satellite CNN
+
+Add:
+
+* image preprocessing
+* transfer learning
+* CNN baseline
+* evaluation
+* model artifact
+
+Do not break the existing ML baseline.
+
+---
+
+## Milestone 7 — Multimodal model
+
+Add:
+
+```
+FIRMS + OSM + Satellite
+```
+
+Compare against all previous baselines.
+
+---
+
+## Milestone 8 — Monitoring intelligence
+
+Add:
+
+* persistence analysis
+* anomaly detection
+* alerts
+* risk indicators
+* explainability
+
+---
+
+## Milestone 9 — Presentation hardening
+
+Before declaring the project complete:
+
+* verify every frontend page
+* verify every API
+* verify demo mode
+* verify model loading
+* verify error handling
+* remove broken buttons
+* remove fake metrics
+* remove placeholder text
+* improve visual consistency
+* test from a clean environment
+* update README
+
+---
+
+# 34. CRITICAL RULES
+
+### NO DATABASE YET
+
+Do not install or implement:
+
+* PostgreSQL
+* SQLAlchemy
+* Alembic
+
+Create repository/service abstractions so they can be added later.
+
+---
+
+### NO FABRICATED ML RESULTS
+
+Never write:
+
+```
+Accuracy = 97%
+```
+
+unless the model actually produced that result on a documented test set.
+
+---
+
+### NO FABRICATED DATA SOURCES
+
+Never claim a dataset is NASA/OSM/satellite data if it is synthetic.
+
+---
+
+### NO RANDOM TRAIN/TEST SPLIT WITHOUT JUSTIFICATION
+
+This is a geospatial ML project.
+
+Treat spatial leakage seriously.
+
+---
+
+### NO CNN-FIRST APPROACH
+
+Establish the tabular baseline first.
+
+---
+
+### NO MONOLITHIC CODE
+
+Separate:
+
+```
+API
+business logic
+data access
+ML inference
+ML training
+frontend API layer
+UI components
+```
+
+---
+
+### NO TRAINING DURING API REQUESTS
+
+Models must be trained offline.
+
+The backend only performs inference.
+
+---
+
+### NO HARD-CODED LOCAL PATHS
+
+Use configuration/environment variables.
+
+---
+
+### NO UNNECESSARY QUESTIONS
+
+If you can make a reasonable engineering decision, make it and document the assumption.
+
+Only stop when user input or credentials are genuinely required.
+
+---
+
+# 35. FIRST OBJECTIVE — DO THIS FIRST
+
+Do not attempt the entire roadmap immediately.
+
+Your first implementation objective is:
+
+```
+EMPTY REPOSITORY
+       ↓
+Project structure
+       ↓
+FastAPI backend
+       ↓
+React frontend
+       ↓
+Demo data
+       ↓
+Interactive map
+       ↓
+Dashboard
+       ↓
+Detection details
+       ↓
+Analytics
+       ↓
+Prediction interface
+       ↓
+Health/status API
+```
+
+At the same time, establish the ML repository structure and begin investigating the real FIRMS dataset.
+
+The application must be runnable and presentable **before the advanced ML stages are implemented**.
+
+---
+
+# 36. DEFINITION OF SUCCESS FOR THE FIRST MILESTONE
+
+A reviewer should be able to clone the repository and run the application.
+
+They should be able to:
+
+1. Open the dashboard.
+2. See thermal anomalies on a map.
+3. Filter detections.
+4. Open an event.
+5. View its thermal information.
+6. Run/view a baseline prediction.
+7. See confidence.
+8. View analytics.
+9. View alerts/persistence information where implemented.
+10. Inspect model status.
+11. Understand that the system is designed for industrial thermal-source monitoring.
+
+At the same time, the repository must have a legitimate ML pipeline under development rather than a frontend-only mockup.
+
+---
+
+# FINAL DEVELOPMENT PRINCIPLE
+
+Build this as a **real geospatial ML product prototype**.
+
+The progression should be:
+
+```
+DATA
+  ↓
+FIRMS BASELINE
+  ↓
+GEOSPATIAL CONTEXT
+  ↓
+SATELLITE CNN
+  ↓
+MULTIMODAL ML/DL
+  ↓
+TEMPORAL PERSISTENCE
+  ↓
+ANOMALY DETECTION
+  ↓
+MONITORING DASHBOARD
+```
+
+Every major ML stage must be experimentally evaluated against the previous stage.
+
+Every major backend capability must have a stable API.
+
+Every important backend capability must have a corresponding frontend presentation.
+
+Do not sacrifice scientific validity for visual appearance, and do not sacrifice application stability for model complexity.
