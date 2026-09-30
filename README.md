@@ -101,6 +101,15 @@ Run the synthetic/demo data generator and train candidate ML models:
   $env:PYTHONPATH="ml/src;backend"; python ml/scripts/train.py
   ```
 
+For the separate Sentinel-2 event-level fusion experiment (does not replace the
+active backend model), install its smaller dependency set and follow
+[`docs/IMAGE_FUSION_TRAINING.md`](docs/IMAGE_FUSION_TRAINING.md):
+
+```bash
+python -m pip install -r ml/requirements-fusion.txt
+python ml/scripts/train_image_fusion.py
+```
+
 ---
 
 #### Step 3: Start FastAPI Backend Server

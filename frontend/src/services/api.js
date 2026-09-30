@@ -67,6 +67,7 @@ export const api = {
   getAlerts: () => fetchJson('/alerts'),
 
   getModels: () => fetchJson('/models'),
+  getFusionStatus: () => fetchJson('/fusion/status'),
   getAvailableModels: () => fetchJson('/models/available'),
   switchModel: (modelName) => fetchJson(`/models/switch/${encodeURIComponent(modelName)}`, {
     method: 'POST',

@@ -20,6 +20,7 @@ function candidateStatus(key, isDeployed) {
 export default function ModelPage() {
   const [modelStatus, setModelStatus] = useState(null);
   const [availableModels, setAvailableModels] = useState([]);
+  const [fusionStatus, setFusionStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [switching, setSwitching] = useState(false);
   const [error, setError] = useState(null);
@@ -32,6 +33,11 @@ export default function ModelPage() {
       const [status, available] = await Promise.all([api.getModels(), api.getAvailableModels()]);
       setModelStatus(status);
       setAvailableModels(Array.isArray(available.available_models) ? available.available_models : []);
+      try {
+        setFusionStatus(await api.getFusionStatus());
+      } catch (fusionError) {
+        setFusionStatus({ enabled: false, reason: fusionError.message || 'Fusion status unavailable.' });
+      }
     } catch (err) {
       setError(err.message || 'Model registry could not be loaded.');
     } finally {
@@ -87,6 +93,32 @@ export default function ModelPage() {
 
       {notice && <div className="border border-status-success/30 bg-status-success/5 px-3 py-2 text-[11px] text-status-success">{notice}</div>}
       {error && <ErrorState title="Model registry error" message={error} action={<button onClick={loadModelInfo} className="mt-2 px-3 py-1.5 border border-line text-[11px]">Retry</button>} />}
+
+      {fusionStatus && (
+        <Panel title="OSM + FIRMS + Satellite Fusion" eyebrow="spatial holdout results" icon={Cpu}>
+          {fusionStatus.enabled ? (
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusBadge status="info" size="xs">spatial CV holdout</StatusBadge>
+                <span className="text-[11px] font-mono text-ink-muted">
+                  {fusionStatus.feature_set} / {fusionStatus.estimator}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 divide-x divide-line border border-line">
+                <Metric label="Trusted OOF Macro F1" value={`${(Number(fusionStatus.trusted_macro_f1 || 0) * 100).toFixed(1)}%`} tone="accent" />
+                <Metric label="Trusted F1 · no flare" value={`${(Number(fusionStatus.trusted_macro_f1_no_flare || 0) * 100).toFixed(1)}%`} tone="info" />
+                <Metric label="Image-covered events" value={fusionStatus.image_covered_events ?? 0} />
+              </div>
+              <p className="text-[11px] text-ink-muted">
+                Dashboard fusion labels are out-of-fold validation predictions for known, imaged events—not live
+                inference. Unmatched events continue to show the current FIRMS/Tier 2 result only.
+              </p>
+            </div>
+          ) : (
+            <EmptyState message={fusionStatus.reason || 'Fusion validation predictions are not available yet.'} />
+          )}
+        </Panel>
+      )}
 
       {loading ? (
         <Panel><LoadingState label="loading model registry…" /></Panel>

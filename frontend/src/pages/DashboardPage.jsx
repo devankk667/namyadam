@@ -17,6 +17,7 @@ export default function DashboardPage() {
   const [summary, setSummary] = useState(null);
   const [detections, setDetections] = useState([]);
   const [alerts, setAlerts] = useState([]);
+  const [fusionStatus, setFusionStatus] = useState(null);
   const [selectedDetection, setSelectedDetection] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lastRefreshed, setLastRefreshed] = useState(null);
@@ -39,6 +40,7 @@ export default function DashboardPage() {
         page_size: 100
       })],
       ['alerts', api.getAlerts],
+      ['fusion', api.getFusionStatus],
     ];
     const errors = {};
     try {
@@ -58,6 +60,7 @@ export default function DashboardPage() {
         setSelectedDetection((prev) => items.some((item) => item.id === prev?.id) ? prev : items[0] || null);
       }
       if (Array.isArray(resultMap.alerts)) setAlerts(resultMap.alerts);
+      if (resultMap.fusion) setFusionStatus(resultMap.fusion);
       setLoadErrors(errors);
       if (!Object.keys(errors).length) setLastRefreshed(new Date());
     } finally {
@@ -166,6 +169,20 @@ export default function DashboardPage() {
                   value={`${selectedDetection.dist_to_industrial} km · ${selectedDetection.nearest_facility_type}`}
                   mono
                 />
+                {selectedDetection.fusion_prediction && (
+                  <div className="border-t border-line pt-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-mono uppercase text-ink-muted">OSM + FIRMS + image</span>
+                      <StatusBadge status="info" size="xs">CV holdout</StatusBadge>
+                    </div>
+                    <div className="mt-1 text-[12px] text-ink-primary font-medium">
+                      {formatClassLabel(selectedDetection.fusion_prediction.predicted_class)}
+                    </div>
+                    <div className="text-[10px] font-mono text-ink-muted">
+                      {(Number(selectedDetection.fusion_prediction.confidence) * 100).toFixed(1)}% · fold {selectedDetection.fusion_prediction.fold}
+                    </div>
+                  </div>
+                )}
                 <button
                   onClick={() => navigate(`/detections/${selectedDetection.id}`)}
                   className="w-full mt-1 flex items-center justify-center gap-1.5 py-1.5 bg-panel2 hover:bg-line border border-line text-[11px] font-medium text-ink-secondary hover:text-ink-primary transition-colors"
@@ -220,6 +237,15 @@ export default function DashboardPage() {
         actions={<span className="text-[11px] font-mono text-ink-muted">{detections.length} rows</span>}
         noPadding
       >
+        {fusionStatus && (
+          <div className="px-3 py-2 border-b border-line text-[10px] font-mono text-ink-muted">
+            {loadErrors.fusion
+              ? `Fusion overlay unavailable: ${loadErrors.fusion}`
+              : fusionStatus.enabled
+                ? `Showing held-out spatial CV fusion results for ${fusionStatus.image_covered_events} image-covered events; this is validation output, not live inference.`
+                : `Fusion overlay unavailable: ${fusionStatus.reason}`}
+          </div>
+        )}
         {loading ? (
           <LoadingState label="fetching /api/detections…" />
         ) : loadErrors.detections ? (
@@ -233,7 +259,8 @@ export default function DashboardPage() {
                 <tr>
                   <th className="px-3 py-2 font-medium">ID / Acquired</th>
                   <th className="px-3 py-2 font-medium">Region</th>
-                  <th className="px-3 py-2 font-medium">Classification</th>
+                  <th className="px-3 py-2 font-medium">Current FIRMS Class</th>
+                  <th className="px-3 py-2 font-medium">Fusion CV Holdout</th>
                   <th className="px-3 py-2 font-medium">FRP</th>
                   <th className="px-3 py-2 font-medium">Confidence</th>
                   <th className="px-3 py-2 font-medium">Nearest Facility</th>
@@ -257,6 +284,20 @@ export default function DashboardPage() {
                       <td className="px-3 py-2 text-ink-secondary">{det.region}</td>
                       <td className="px-3 py-2">
                         <StatusBadge status={meta.status} size="xs">{meta.label}</StatusBadge>
+                      </td>
+                      <td className="px-3 py-2">
+                        {det.fusion_prediction ? (
+                          <div className="space-y-0.5">
+                            <StatusBadge status="info" size="xs">
+                              {formatClassLabel(det.fusion_prediction.predicted_class)}
+                            </StatusBadge>
+                            <div className="text-[10px] font-mono text-ink-muted">
+                              {(Number(det.fusion_prediction.confidence) * 100).toFixed(1)}% · fold {det.fusion_prediction.fold}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] font-mono text-ink-muted">no image CV coverage</span>
+                        )}
                       </td>
                       <td className="px-3 py-2 font-mono text-accent font-semibold">{det.frp} MW</td>
                       <td className="px-3 py-2 font-mono text-ink-secondary">{det.confidence}%</td>

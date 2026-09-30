@@ -84,7 +84,7 @@ export default function DetectionDetailPage() {
 
   const diagnostics = useMemo(() => {
     if (!data) return null;
-    const { record, ml_prediction } = data;
+    const { record, ml_prediction, fusion_prediction } = data;
     const isHeuristic = ml_prediction?.inference_mode === 'heuristic' || ml_prediction?.model_version?.includes('fallback');
     const warnings = [];
 
@@ -116,6 +116,12 @@ export default function DetectionDetailPage() {
       warnings.push({
         level: 'info',
         text: `Limited historical window: only ${record.detection_count_30d} observation(s) in the trailing 30 days — persistence score may be unstable.`,
+      });
+    }
+    if (!fusion_prediction) {
+      warnings.push({
+        level: 'info',
+        text: 'No image-fusion holdout result is available for this event; the displayed classifier result uses the current FIRMS/Tier 2 model.',
       });
     }
 
@@ -167,7 +173,7 @@ export default function DetectionDetailPage() {
     );
   }
 
-  const { record, ml_prediction } = data;
+  const { record, ml_prediction, fusion_prediction } = data;
   const meta = classificationMeta(record.true_class);
   const tempDiff = (record.brightness - record.bright_t31).toFixed(1);
 
@@ -228,6 +234,41 @@ export default function DetectionDetailPage() {
       {activeTab === 'analysis' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           <div className="lg:col-span-2 space-y-5">
+            {fusion_prediction && (
+              <Panel title="OSM + FIRMS + Satellite Fusion" eyebrow="spatial CV holdout">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <div className="text-[10px] font-mono uppercase tracking-wider text-ink-muted">Held-out event prediction</div>
+                    <div className="mt-1 text-[14px] font-semibold text-ink-primary">
+                      {formatClassLabel(fusion_prediction.predicted_class)}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] font-mono uppercase tracking-wider text-ink-muted">Confidence</div>
+                    <div className="mt-1 text-[14px] font-mono text-accent">
+                      {(Number(fusion_prediction.confidence) * 100).toFixed(1)}%
+                    </div>
+                  </div>
+                  <StatusBadge status="info" size="xs">fold {fusion_prediction.fold} · OOF</StatusBadge>
+                </div>
+                <div className="mt-4 space-y-2">
+                  {Object.entries(fusion_prediction.class_probabilities || {})
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([className, probability]) => (
+                      <ProbabilityBar
+                        key={className}
+                        label={formatClassLabel(className)}
+                        value={probability}
+                        highlighted={className === fusion_prediction.predicted_class}
+                      />
+                    ))}
+                </div>
+                <p className="mt-3 text-[11px] text-ink-muted">
+                  This event was held out from the fusion model for spatial cross-validation. This is an evaluation
+                  result, not live inference; unseen events need the satellite feature-extraction pipeline.
+                </p>
+              </Panel>
+            )}
             {ml_prediction && (
               <Panel title="Model Explanation" eyebrow="why this result" icon={Brain}>
                 <p className="text-[12px] text-ink-secondary leading-relaxed border-l-2 border-accent/50 pl-3">
@@ -326,6 +367,7 @@ export default function DetectionDetailPage() {
               />
               <KeyValueRow label="supported classes" value={Object.keys(ml_prediction?.class_probabilities || {}).length} mono />
               <KeyValueRow label="satellite / instrument" value={`${record.satellite} / ${record.instrument}`} mono />
+              <KeyValueRow label="fusion CV output" value={fusion_prediction ? `${fusion_prediction.feature_set} / ${fusion_prediction.estimator} · fold ${fusion_prediction.fold}` : 'not available'} mono />
             </Panel>
           </div>
 
@@ -333,9 +375,14 @@ export default function DetectionDetailPage() {
             <Disclosure title="detection.json" eyebrow="raw record" mono defaultOpen>
               <JsonViewer data={record} title="record" />
             </Disclosure>
-            <Disclosure title="prediction.json" eyebrow="raw model output" mono>
+            <Disclosure title="prediction.json" eyebrow="current Tier 2 output" mono>
               <JsonViewer data={ml_prediction} title="ml_prediction" />
             </Disclosure>
+            {fusion_prediction && (
+              <Disclosure title="fusion_cv_prediction.json" eyebrow="held-out fusion result" mono>
+                <JsonViewer data={fusion_prediction} title="fusion_prediction" />
+              </Disclosure>
+            )}
           </div>
         </div>
       )}

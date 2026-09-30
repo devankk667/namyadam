@@ -1,0 +1,8 @@
+model,trusted_macroF1,trusted_macroF1_no_flare,trusted_balAcc,trusted_foldF1_mean,trusted_foldF1_std,all_macroF1,all_balAcc,trusted_recall_agri,trusted_recall_industrial,trusted_recall_mining,trusted_recall_flare
+cnn_cv_raw,0.378,0.504,0.416,0.484,0.211,0.498,0.454,0.978,0.506,0.18,0.0
+cnn_cv_prior_corrected,0.411,0.548,0.437,0.498,0.205,0.51,0.482,0.944,0.542,0.26,0.0
+cnn_cva01_raw,0.387,0.517,0.424,0.471,0.21,0.499,0.458,0.989,0.518,0.19,0.0
+cnn_cva01_prior_corrected,0.409,0.545,0.437,0.484,0.211,0.509,0.477,0.956,0.554,0.24,0.0
+majority,0.121,0.162,0.25,0.157,0.043,0.245,0.25,1.0,0.0,0.0,0.0
+spectral_hgb,0.242,0.323,0.302,0.316,0.121,0.419,0.377,0.933,0.157,0.12,0.0
+frozen_lr,0.41,0.547,0.416,0.496,0.169,0.415,0.491,0.689,0.554,0.42,0.0

@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     DEMO_DATA_PATH: str = os.path.join(PROJECT_ROOT, "data", "demo", "thermal_detections_demo.json")
     PROCESSED_DATA_PATH: str = os.path.join(PROJECT_ROOT, "data", "processed", "thermal_detections_processed.csv")
     FIRMS_PREDICTIONS_PATH: str = os.path.join(PROJECT_ROOT, "data", "processed", "firms_1.1M_predictions.parquet")
+    FIRMS_EVENT_MAP_PATH: str = os.path.join(PROJECT_ROOT, "data", "processed", "firms_obs_event_map.parquet")
+    FUSION_OOF_PREDICTIONS_PATH: str = os.path.join(PROJECT_ROOT, "ml", "models", "fusion_v1", "fusion_oof_predictions_v1.parquet")
+    FUSION_METRICS_PATH: str = os.path.join(PROJECT_ROOT, "ml", "models", "fusion_v1", "fusion_metrics_v1.json")
     FIRMS_SAMPLE_SIZE: int = 500
     REQUIRE_REAL_DATA: bool = False
     REQUIRE_TRAINED_MODEL: bool = False

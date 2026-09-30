@@ -1,0 +1,194 @@
+{
+  "selected_cnn_run": "cv",
+  "model": "ResNet18 (ImageNet init), first conv adapted to 6 Sentinel-2 bands, 4-class head",
+  "version": "image_model_v1",
+  "created_utc": "2026-09-29T18:08:01+00:00",
+  "input": {
+    "bands": [
+      "B02",
+      "B03",
+      "B04",
+      "B08",
+      "B11",
+      "B12"
+    ],
+    "pixels": 256,
+    "resolution_m": 20,
+    "extent_km": 5.12,
+    "preprocessing": "512 px 10 m surface reflectance patch, 2x2 mean -> 256 px, NaN -> band mean, z-score with band_mean/band_std",
+    "band_mean": [
+      0.07109,
+      0.094044,
+      0.112979,
+      0.230314,
+      0.264537,
+      0.190591
+    ],
+    "band_std": [
+      0.036657,
+      0.03909,
+      0.053651,
+      0.073585,
+      0.079041,
+      0.069031
+    ]
+  },
+  "classes": [
+    "agricultural_burning",
+    "industrial_fire",
+    "mining_activity",
+    "gas_flare"
+  ],
+  "training": {
+    "labels": "all labelled events; trusted (high/medium) up-weighted",
+    "cv": "5-fold StratifiedGroupKFold on 0.1-degree blocks (spatial_folds_v1.csv)",
+    "args": {
+      "folds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "final": false,
+      "epochs": 15,
+      "epoch_size": 8000,
+      "batch": 64,
+      "lr": 0.0003,
+      "alpha": 0.25,
+      "trust_weight": 5.0,
+      "eval_every": 3,
+      "limit": null,
+      "tag": "cv"
+    }
+  },
+  "dataset": {
+    "source": "https://earth-search.aws.element84.com/v1 :: sentinel-2-c1-l2a",
+    "created_utc": "2026-09-28T20:43:05+00:00",
+    "status_counts": {
+      "ok": 18926,
+      "cloudy": 3
+    },
+    "ok_label_counts": {
+      "agricultural_burning": 18133,
+      "industrial_fire": 685,
+      "mining_activity": 100,
+      "gas_flare": 8
+    }
+  },
+  "metrics_out_of_fold": {
+    "cnn_cv_raw": {
+      "trusted_events": {
+        "n": 281,
+        "macro_f1": 0.37800614398958904,
+        "macro_f1_no_flare": 0.5040081919861187,
+        "balanced_accuracy": 0.41595046854082995
+      },
+      "all_events": {
+        "n": 18926,
+        "macro_f1": 0.4975976171613474,
+        "macro_f1_no_flare": 0.6634634895484632,
+        "balanced_accuracy": 0.45415659275080594
+      }
+    },
+    "cnn_cv_prior_corrected": {
+      "trusted_events": {
+        "n": 281,
+        "macro_f1": 0.4111601141320749,
+        "macro_f1_no_flare": 0.5482134855094333,
+        "balanced_accuracy": 0.43665327978580987
+      },
+      "all_events": {
+        "n": 18926,
+        "macro_f1": 0.5100261825406995,
+        "macro_f1_no_flare": 0.6800349100542661,
+        "balanced_accuracy": 0.48230830308575606
+      }
+    },
+    "cnn_cva01_raw": {
+      "trusted_events": {
+        "n": 281,
+        "macro_f1": 0.3874245253657019,
+        "macro_f1_no_flare": 0.5165660338209358,
+        "balanced_accuracy": 0.42424029451137885
+      },
+      "all_events": {
+        "n": 18926,
+        "macro_f1": 0.49919099929385413,
+        "macro_f1_no_flare": 0.6655879990584722,
+        "balanced_accuracy": 0.45831596605132957
+      }
+    },
+    "cnn_cva01_prior_corrected": {
+      "trusted_events": {
+        "n": 281,
+        "macro_f1": 0.40907464162135443,
+        "macro_f1_no_flare": 0.5454328554951392,
+        "balanced_accuracy": 0.43744310575635875
+      },
+      "all_events": {
+        "n": 18926,
+        "macro_f1": 0.5090574726277179,
+        "macro_f1_no_flare": 0.6787432968369572,
+        "balanced_accuracy": 0.47670974522798093
+      }
+    },
+    "majority": {
+      "trusted_events": {
+        "n": 281,
+        "macro_f1": 0.12129380053908356,
+        "macro_f1_no_flare": 0.16172506738544476,
+        "balanced_accuracy": 0.25
+      },
+      "all_events": {
+        "n": 18926,
+        "macro_f1": 0.24465042229957634,
+        "macro_f1_no_flare": 0.3262005630661018,
+        "balanced_accuracy": 0.25
+      }
+    },
+    "spectral_hgb": {
+      "trusted_events": {
+        "n": 281,
+        "macro_f1": 0.24208520272515785,
+        "macro_f1_no_flare": 0.32278027030021045,
+        "balanced_accuracy": 0.30248995983935745
+      },
+      "all_events": {
+        "n": 18926,
+        "macro_f1": 0.41881361951715296,
+        "macro_f1_no_flare": 0.558418159356204,
+        "balanced_accuracy": 0.3772920283662363
+      }
+    },
+    "frozen_lr": {
+      "trusted_events": {
+        "n": 281,
+        "macro_f1": 0.4100744821956943,
+        "macro_f1_no_flare": 0.5467659762609257,
+        "balanced_accuracy": 0.4157764390896921
+      },
+      "all_events": {
+        "n": 18926,
+        "macro_f1": 0.41451871919690014,
+        "macro_f1_no_flare": 0.5526916255958668,
+        "balanced_accuracy": 0.4913570109100599
+      }
+    }
+  },
+  "caveats": [
+    "98.5% of labels are low-confidence OSM/FIRMS rule labels; 'all_events' scores measure agreement with those rules. 'trusted_events' (high/medium, n=281) is the meaningful yardstick.",
+    "mining_activity: 100 events from 10 sites, 72 from one site; gas_flare: 8 events from 2 sites. Scores for these classes rest on very few independent locations.",
+    "Embeddings are out-of-fold: each event was embedded by a fold model that never saw its 0.1-degree block."
+  ],
+  "output": {
+    "prior_correction_share": [
+      0.5381251971258693,
+      0.23724034961688417,
+      0.14664454503849003,
+      0.0779899082187566
+    ],
+    "note": "divide softmax probabilities by this share and renormalise (done in infer.py)"
+  },
+  "weights": "models/cnn_final.pt (trained on all labelled events, for inference on new events)"
+}

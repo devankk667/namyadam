@@ -1,7 +1,28 @@
+from pathlib import Path
+
 from fastapi.testclient import TestClient
+
+from app.core.config import settings
 from app.main import app
 
 client = TestClient(app)
+
+def test_configured_firms_data_is_loaded_into_detection_api():
+    if not Path(settings.FIRMS_PREDICTIONS_PATH).is_file():
+        return
+
+    health = client.get("/api/health")
+    assert health.status_code == 200
+    health_data = health.json()
+    assert health_data["data_source"] == "firms_predictions"
+    assert health_data["source_record_count"] >= health_data["data_record_count"] > 0
+
+    response = client.get("/api/detections?page=1&page_size=5")
+    assert response.status_code == 200
+    items = response.json()["items"]
+    assert items
+    assert all({"id", "latitude", "longitude", "frp", "true_class"} <= item.keys() for item in items)
+
 
 def test_health_endpoint():
     response = client.get("/api/health")
@@ -18,6 +39,7 @@ def test_get_detections():
     data = response.json()
     assert "total" in data
     assert len(data["items"]) <= 10
+    assert all("fusion_prediction" in item for item in data["items"])
 
     zero_filter = client.get("/api/detections?min_confidence=0&min_frp=0&page_size=10")
     assert zero_filter.status_code == 200
@@ -37,6 +59,7 @@ def test_get_detection_detail_valid():
     assert response.status_code == 200
     data = response.json()
     assert data["record"]["id"] == det_id
+    assert "fusion_prediction" in data
     assert "_model_features_available" not in data["record"]
     if data["ml_prediction"] is None:
         assert data["prediction_error"]
@@ -102,6 +125,15 @@ def test_alerts_endpoint():
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 
+def test_fusion_status_endpoint():
+    response = client.get("/api/fusion/status")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["prediction_kind"] == "spatial_cv_oof"
+    assert isinstance(data["enabled"], bool)
+    assert "reason" in data
+
+
 def test_models_endpoint():
     response = client.get("/api/models")
     assert response.status_code == 200
@@ -116,6 +148,9 @@ def test_models_endpoint():
     assert isinstance(available_models, list)
     if available_models:
         assert {"name", "description", "active", "feature_count"} <= available_models[0].keys()
+        switch = client.post(f"/api/models/switch/{available_models[0]['name']}")
+        assert switch.status_code == 200
+        assert switch.json()["status"] == "success"
 
     invalid_switch = client.post("/api/models/switch/not-a-model")
     assert invalid_switch.status_code == 400

@@ -9,6 +9,7 @@ from app.schemas.schemas import (
 )
 from app.repositories.detection_repository import detection_repo
 from app.services.model_service import model_service
+from app.services.fusion_validation_service import fusion_validation_service
 from app.services.analytics_service import AnalyticsService, AlertService
 
 router = APIRouter()
@@ -28,6 +29,7 @@ def get_health():
         "data_record_count": len(detection_repo.get_raw_list()),
         "source_record_count": detection_repo.total_source_records,
         "data_error": detection_repo.data_error,
+        "fusion_validation_available": fusion_validation_service.get_status()["enabled"],
         "timestamp": datetime.utcnow().isoformat() + "Z"
     }
 
@@ -40,7 +42,7 @@ def get_detections(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=500)
 ):
-    return detection_repo.get_filtered(
+    result = detection_repo.get_filtered(
         min_confidence=min_confidence,
         min_frp=min_frp,
         classification=classification,
@@ -48,6 +50,9 @@ def get_detections(
         page=page,
         page_size=page_size
     )
+    for item in result["items"]:
+        item["fusion_prediction"] = fusion_validation_service.get_by_event_id(item.get("event_id"))
+    return result
 
 @router.get("/detections/{detection_id}")
 def get_detection_detail(detection_id: str):
@@ -88,6 +93,7 @@ def get_detection_detail(detection_id: str):
     return {
         "record": record,
         "ml_prediction": prediction,
+        "fusion_prediction": fusion_validation_service.get_by_event_id(record.get("event_id")),
         "prediction_error": prediction_error,
     }
 
@@ -97,6 +103,11 @@ def predict_thermal_anomaly(input_data: PredictionInput):
         return model_service.predict(input_data)
     except (RuntimeError, ValueError) as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
+
+@router.get("/fusion/status")
+def get_fusion_status():
+    """Status of held-out event-level fusion predictions available to the UI."""
+    return fusion_validation_service.get_status()
 
 @router.get("/models/available")
 def get_available_models():

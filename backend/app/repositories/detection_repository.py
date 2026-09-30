@@ -20,8 +20,12 @@ MODEL_FEATURE_SOURCE_MAP = {
 }
 
 
-def _representative_sample(df: pd.DataFrame, sample_size: int, seed: int = 42) -> pd.DataFrame:
-    """Take a repeatable proportional sample, stratified by class and date."""
+def _representative_sample(
+    df: pd.DataFrame,
+    sample_size: int,
+    seed: Optional[int] = None,
+) -> pd.DataFrame:
+    """Take a proportional class/date-stratified sample; seed for reproducibility in tests."""
     if len(df) <= sample_size:
         return df.copy()
 
@@ -82,6 +86,39 @@ class ThermalDetectionRepository:
         self.data_error: Optional[str] = None
         self.total_source_records = 0
         self.reload()
+
+    def _event_ids_for_sample(self, sampled: pd.DataFrame) -> List[Optional[str]]:
+        """Join the sampled source row IDs to event IDs only when the map is exact."""
+        if not os.path.isfile(settings.FIRMS_EVENT_MAP_PATH):
+            return [None] * len(sampled)
+        try:
+            event_map = pd.read_parquet(
+                settings.FIRMS_EVENT_MAP_PATH,
+                columns=["obs_id", "event_id"],
+            )
+            obs_ids = pd.to_numeric(event_map["obs_id"], errors="coerce")
+            event_ids = event_map["event_id"]
+            if (
+                self.total_source_records <= 0
+                or len(event_map) != self.total_source_records
+                or obs_ids.isna().any()
+                or (obs_ids % 1 != 0).any()
+                or obs_ids.duplicated().any()
+                or int(obs_ids.min()) != 0
+                or int(obs_ids.max()) != self.total_source_records - 1
+                or event_ids.isna().any()
+                or event_ids.astype(str).str.strip().eq("").any()
+            ):
+                raise ValueError("observation map does not exactly cover the FIRMS source rows")
+            event_map["obs_id"] = obs_ids.astype(int)
+            event_lookup = event_map.set_index("obs_id")["event_id"]
+            event_ids = event_lookup.reindex(sampled.index).tolist()
+            if len(event_ids) != len(sampled):
+                raise ValueError("observation map did not cover the sampled rows")
+            return event_ids
+        except Exception as error:
+            print(f"[WARNING] Event IDs unavailable for FIRMS sample: {type(error).__name__}: {error}")
+            return [None] * len(sampled)
 
     @staticmethod
     def _normalize_fallback_frame(df: pd.DataFrame) -> pd.DataFrame:
@@ -163,7 +200,7 @@ class ThermalDetectionRepository:
         return df
 
     def reload(self):
-        """Load a deterministic, stratified sample from the preferred source."""
+        """Load a random but class/date-stratified sample from the preferred source."""
         self._cache = []
         self.data_source = "unavailable"
         self.data_error = None
@@ -197,6 +234,7 @@ class ThermalDetectionRepository:
                 sample_size = min(max(1, settings.FIRMS_SAMPLE_SIZE), len(df))
                 sampled = _representative_sample(df, sample_size)
                 df_subset = sampled[cols_available].copy()
+                df_subset["event_id"] = self._event_ids_for_sample(sampled)
 
                 # Rename columns to match expected schema
                 column_mapping = {
@@ -230,8 +268,8 @@ class ThermalDetectionRepository:
                     numeric_confidence = pd.to_numeric(df_subset['confidence'], errors='coerce')
                     df_subset['confidence'] = mapped_confidence.fillna(numeric_confidence).fillna(50)
 
-                # Stable string IDs for routing (/detections/:id)
-                df_subset['id'] = [f"DET-2024-{i:04d}" for i in range(len(df_subset))]
+                # Stable source-row IDs make sampled detections identifiable across restarts.
+                df_subset['id'] = [f"DET-FIRMS-{int(index):07d}" for index in df_subset.index]
 
 
                 # Format acquisition time from FIRMS HHMM integer
