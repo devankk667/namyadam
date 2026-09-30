@@ -1,0 +1,9 @@
+split,class,obs,events
+train,agricultural_burning,685,67
+train,gas_flare,231,8
+train,industrial_fire,4197,63
+train,mining_activity,809,40
+test,agricultural_burning,219,23
+test,gas_flare,0,0
+test,industrial_fire,281,20
+test,mining_activity,2343,79

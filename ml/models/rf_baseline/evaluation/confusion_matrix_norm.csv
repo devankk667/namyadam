@@ -1,0 +1,5 @@
+,agricultural_burning,gas_flare,industrial_fire,mining_activity
+agricultural_burning,1.0,0.0,0.0,0.0
+gas_flare,,,,
+industrial_fire,0.0,0.0854,0.9146,0.0
+mining_activity,0.0,0.0,0.0,1.0

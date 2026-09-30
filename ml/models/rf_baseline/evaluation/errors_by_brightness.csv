@@ -1,0 +1,13 @@
+ti4_bin,y,n,err
+<310,agricultural_burning,118,0.0
+<310,industrial_fire,102,0.0196
+<310,mining_activity,1493,0.0
+310-330,agricultural_burning,49,0.0
+310-330,industrial_fire,98,0.0714
+310-330,mining_activity,646,0.0
+330-350,agricultural_burning,50,0.0
+330-350,industrial_fire,54,0.2407
+330-350,mining_activity,201,0.0
+>350 K,agricultural_burning,2,0.0
+>350 K,industrial_fire,27,0.0741
+>350 K,mining_activity,3,0.0

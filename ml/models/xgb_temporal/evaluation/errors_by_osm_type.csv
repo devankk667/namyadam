@@ -1,0 +1,11 @@
+nearest_osm_type,n,err
+landuse:quarry,2332,0.0
+power:plant,251,0.0
+power:generator,125,0.0
+man_made:chimney,74,0.0135
+man_made:storage_tank,29,0.0
+man_made:flare,25,0.64
+industrial:depot,3,0.0
+landuse:industrial,2,0.0
+industrial:mine,1,0.0
+man_made:works,1,0.0

@@ -1,0 +1,123 @@
+{
+  "model_name": "random_forest",
+  "version": "1.0.0",
+  "supported_classes": [
+    "industrial_thermal_source",
+    "industrial_fire",
+    "wildfire",
+    "agricultural_burning",
+    "other_thermal_anomaly"
+  ],
+  "feature_names": [
+    "brightness",
+    "bright_t31",
+    "temp_difference",
+    "frp",
+    "confidence",
+    "dist_to_industrial",
+    "industrial_count_2km",
+    "industrial_count_5km",
+    "persistence_score",
+    "detection_count_30d",
+    "facility_refinery",
+    "facility_flare_stack",
+    "facility_gas_terminal",
+    "facility_chemical",
+    "facility_power_plant",
+    "facility_steel_works",
+    "facility_factory",
+    "facility_none"
+  ],
+  "metrics": {
+    "macro_f1": 0.9725158562367865,
+    "precision_macro": 0.9822222222222223,
+    "recall_macro": 0.9666666666666666,
+    "roc_auc_ovr": 0.9997934080462455
+  },
+  "all_model_benchmarks": {
+    "logistic_regression": {
+      "macro_f1": 0.9467513774475493,
+      "precision_macro": 0.9673469387755101,
+      "recall_macro": 0.9390350877192983,
+      "roc_auc_ovr": 0.9979352902839855
+    },
+    "random_forest": {
+      "macro_f1": 0.9725158562367865,
+      "precision_macro": 0.9822222222222223,
+      "recall_macro": 0.9666666666666666,
+      "roc_auc_ovr": 0.9997934080462455
+    },
+    "xgboost": {
+      "macro_f1": 0.9584828718806545,
+      "precision_macro": 0.9686498855835239,
+      "recall_macro": 0.952603891363991,
+      "roc_auc_ovr": 0.9994246858949631
+    },
+    "pytorch_multimodal": {
+      "macro_f1": 0.930782520100113,
+      "precision_macro": 0.9607843137254901,
+      "recall_macro": 0.9223684210526315,
+      "roc_auc_ovr": 0.9984672998256674
+    }
+  },
+  "feature_importances": {
+    "brightness": 0.07561865009609754,
+    "bright_t31": 0.028152398838494293,
+    "temp_difference": 0.023940276269036817,
+    "frp": 0.20308930279227957,
+    "confidence": 0.04523804778903201,
+    "dist_to_industrial": 0.11096053959012978,
+    "industrial_count_2km": 0.07021367598045265,
+    "industrial_count_5km": 0.0759319437833727,
+    "persistence_score": 0.10950192538356011,
+    "detection_count_30d": 0.1487600883404837,
+    "facility_refinery": 0.0,
+    "facility_flare_stack": 4.185844813426772e-05,
+    "facility_gas_terminal": 0.0004764035782929136,
+    "facility_chemical": 0.0003512102101610908,
+    "facility_power_plant": 0.0051615120758556855,
+    "facility_steel_works": 0.0014937691868840363,
+    "facility_factory": 0.009295470928048732,
+    "facility_none": 0.09177292670968411
+  },
+  "confusion_matrix": [
+    [
+      135,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      51,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      76,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      41,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      4,
+      20
+    ]
+  ],
+  "split_method": "Facility-Aware Spatial Group Split",
+  "train_samples": 872,
+  "test_samples": 327
+}

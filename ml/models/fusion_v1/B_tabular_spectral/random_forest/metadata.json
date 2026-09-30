@@ -1,0 +1,1069 @@
+{
+  "model": "random_forest event-level image fusion",
+  "version": "fusion_v1",
+  "feature_set": "B_tabular_spectral",
+  "features": [
+    "max_frp",
+    "median_frp",
+    "mean_frp",
+    "median_temp_diff",
+    "n_detections",
+    "n_days",
+    "duration_days",
+    "frac_night",
+    "month_first",
+    "month_last",
+    "nearest_osm_distance_km",
+    "industrial_count_1km",
+    "industrial_count_2km",
+    "industrial_count_5km",
+    "power_plant_count_5km",
+    "quarry_count_5km",
+    "flare_count_5km",
+    "petroleum_well_count_5km",
+    "industrial_landuse_nearby",
+    "ndvi_mean",
+    "ndvi_std",
+    "ndvi_center",
+    "gndvi_mean",
+    "gndvi_std",
+    "gndvi_center",
+    "mndwi_mean",
+    "mndwi_std",
+    "mndwi_center",
+    "ndbi_mean",
+    "ndbi_std",
+    "ndbi_center",
+    "nbr_mean",
+    "nbr_std",
+    "nbr_center",
+    "nbr2_mean",
+    "nbr2_std",
+    "nbr2_center",
+    "evi_mean",
+    "evi_std",
+    "evi_center",
+    "frac_vegetation",
+    "frac_builtup",
+    "frac_water",
+    "frac_low_nbr",
+    "scl_veg_frac",
+    "scl_bare_frac",
+    "scl_water_frac",
+    "scl_cloud_frac",
+    "B02_center",
+    "B03_center",
+    "B04_center",
+    "B08_center",
+    "B11_center",
+    "B12_center",
+    "b12_center_max",
+    "b12_hotspot_ratio",
+    "hot_px_center",
+    "hot_px_total",
+    "has_image"
+  ],
+  "classes": [
+    "agricultural_burning",
+    "industrial_fire",
+    "mining_activity",
+    "gas_flare"
+  ],
+  "macro_f1": 0.3260146530651262,
+  "trusted_macro_f1_no_flare": 0.43936872189299375,
+  "n_train": 18929,
+  "n_trusted": 281,
+  "split": "5-fold spatial CV using person2_fusion_image_features_v1/data/spatial_folds_v1.csv",
+  "feature_importances": {
+    "hot_px_center": 0.060621315589551125,
+    "n_days": 0.055344219333103885,
+    "duration_days": 0.05127290292982687,
+    "mean_frp": 0.04984372667206606,
+    "mndwi_mean": 0.04831979041105557,
+    "ndbi_center": 0.04805840290563898,
+    "max_frp": 0.04771308635609576,
+    "scl_water_frac": 0.045623517426189565,
+    "nbr2_center": 0.03969575200952481,
+    "b12_center_max": 0.03798879842408627,
+    "median_frp": 0.03421977506057063,
+    "ndbi_mean": 0.03014032704976488,
+    "median_temp_diff": 0.0288731623788137,
+    "mndwi_center": 0.027691368455163918,
+    "nbr_center": 0.026190800357587963,
+    "frac_night": 0.02388247713968411,
+    "nbr_mean": 0.02057015465800992,
+    "gndvi_mean": 0.019548689963881424,
+    "mndwi_std": 0.019203312346335606,
+    "hot_px_total": 0.019049623511201617,
+    "nbr2_mean": 0.017625926790939085,
+    "gndvi_center": 0.016835640821551888,
+    "evi_center": 0.01652856826617277,
+    "B11_center": 0.014679446562314857,
+    "n_detections": 0.01407208315572095,
+    "gndvi_std": 0.01397729851518605,
+    "frac_builtup": 0.013124464454365024,
+    "b12_hotspot_ratio": 0.012622920151277897,
+    "ndvi_std": 0.01220211334774773,
+    "ndvi_mean": 0.011351548899553936,
+    "evi_mean": 0.010912279201997967,
+    "frac_water": 0.01032868850063504,
+    "frac_low_nbr": 0.010189428106908826,
+    "ndvi_center": 0.010109980436790204,
+    "B12_center": 0.008655515052717385,
+    "B08_center": 0.008609430286026426,
+    "evi_std": 0.0084111252135956,
+    "scl_bare_frac": 0.0075931459489486045,
+    "nbr_std": 0.006374342018911061,
+    "ndbi_std": 0.006177927191197389,
+    "frac_vegetation": 0.005963236209265073,
+    "nbr2_std": 0.005838563819539967,
+    "scl_veg_frac": 0.004645032275160333,
+    "B04_center": 0.003735576244502589,
+    "B03_center": 0.003269644286055414,
+    "scl_cloud_frac": 0.003216622875726398,
+    "month_last": 0.003141846295871435,
+    "month_first": 0.0031332925435391956,
+    "B02_center": 0.0028231095496283084,
+    "has_image": 3.8597731330425805e-19,
+    "nearest_osm_distance_km": 0.0,
+    "industrial_count_1km": 0.0,
+    "industrial_count_2km": 0.0,
+    "industrial_count_5km": 0.0,
+    "power_plant_count_5km": 0.0,
+    "quarry_count_5km": 0.0,
+    "flare_count_5km": 0.0,
+    "petroleum_well_count_5km": 0.0,
+    "industrial_landuse_nearby": 0.0
+  },
+  "metrics": {
+    "trusted_oof": {
+      "n": 281,
+      "macro_f1": 0.3260146530651262,
+      "macro_f1_no_flare": 0.43936872189299375,
+      "balanced_accuracy": 0.388979250334672,
+      "per_class": {
+        "agricultural_burning": {
+          "precision": 0.3788546255506608,
+          "recall": 0.9555555555555556,
+          "f1-score": 0.5425867507886435,
+          "support": 90.0
+        },
+        "industrial_fire": {
+          "precision": 1.0,
+          "recall": 0.5903614457831325,
+          "f1-score": 0.7424242424242424,
+          "support": 83.0
+        },
+        "mining_activity": {
+          "precision": 0.2,
+          "recall": 0.01,
+          "f1-score": 0.01904761904761905,
+          "support": 100.0
+        },
+        "gas_flare": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 8.0
+        },
+        "accuracy": 0.48398576512455516,
+        "macro avg": {
+          "precision": 0.3947136563876652,
+          "recall": 0.388979250334672,
+          "f1-score": 0.3260146530651262,
+          "support": 281.0
+        },
+        "weighted avg": {
+          "precision": 0.4878893818489661,
+          "recall": 0.48398576512455516,
+          "f1-score": 0.39985331529164386,
+          "support": 281.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          86,
+          0,
+          4,
+          0
+        ],
+        [
+          34,
+          49,
+          0,
+          0
+        ],
+        [
+          99,
+          0,
+          1,
+          0
+        ],
+        [
+          8,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    "all_events_oof": {
+      "n": 18929,
+      "macro_f1": 0.49701170800413896,
+      "macro_f1_no_flare": 0.6627552435187047,
+      "balanced_accuracy": 0.4899258240254492,
+      "per_class": {
+        "agricultural_burning": {
+          "precision": 0.9922803175472215,
+          "recall": 0.9993383325981473,
+          "f1-score": 0.9957968187687152,
+          "support": 18136.0
+        },
+        "industrial_fire": {
+          "precision": 1.0,
+          "recall": 0.9503649635036496,
+          "f1-score": 0.9745508982035929,
+          "support": 685.0
+        },
+        "mining_activity": {
+          "precision": 0.07692307692307693,
+          "recall": 0.01,
+          "f1-score": 0.017699115044247787,
+          "support": 100.0
+        },
+        "gas_flare": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 8.0
+        },
+        "accuracy": 0.9919171641396799,
+        "macro avg": {
+          "precision": 0.5173008486175746,
+          "recall": 0.4899258240254492,
+          "f1-score": 0.49701170800413896,
+          "support": 18929.0
+        },
+        "weighted avg": {
+          "precision": 0.9873045668935875,
+          "recall": 0.9919171641396799,
+          "f1-score": 0.9894399271997095,
+          "support": 18929.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          18124,
+          0,
+          12,
+          0
+        ],
+        [
+          34,
+          651,
+          0,
+          0
+        ],
+        [
+          99,
+          0,
+          1,
+          0
+        ],
+        [
+          8,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    "folds": {
+      "0": {
+        "trusted": {
+          "n": 106,
+          "macro_f1": 0.29464285714285715,
+          "macro_f1_no_flare": 0.39285714285714285,
+          "balanced_accuracy": 0.5833333333333334,
+          "per_class": {
+            "agricultural_burning": {
+              "precision": 0.19148936170212766,
+              "recall": 1.0,
+              "f1-score": 0.32142857142857145,
+              "support": 18.0
+            },
+            "industrial_fire": {
+              "precision": 1.0,
+              "recall": 0.75,
+              "f1-score": 0.8571428571428571,
+              "support": 16.0
+            },
+            "mining_activity": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1-score": 0.0,
+              "support": 72.0
+            },
+            "gas_flare": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1-score": 0.0,
+              "support": 0.0
+            },
+            "accuracy": 0.2830188679245283,
+            "macro avg": {
+              "precision": 0.2978723404255319,
+              "recall": 0.4375,
+              "f1-score": 0.29464285714285715,
+              "support": 106.0
+            },
+            "weighted avg": {
+              "precision": 0.1834604576475311,
+              "recall": 0.2830188679245283,
+              "f1-score": 0.18396226415094338,
+              "support": 106.0
+            }
+          },
+          "confusion_matrix": [
+            [
+              18,
+              0,
+              0,
+              0
+            ],
+            [
+              4,
+              12,
+              0,
+              0
+            ],
+            [
+              72,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0
+            ]
+          ]
+        },
+        "all_events": {
+          "n": 3835,
+          "macro_f1": 0.4936765694040032,
+          "macro_f1_no_flare": 0.6582354258720042,
+          "balanced_accuracy": 0.6568627450980392,
+          "per_class": {
+            "agricultural_burning": {
+              "precision": 0.9794761004590872,
+              "recall": 1.0,
+              "f1-score": 0.9896316507503411,
+              "support": 3627.0
+            },
+            "industrial_fire": {
+              "precision": 1.0,
+              "recall": 0.9705882352941176,
+              "f1-score": 0.9850746268656716,
+              "support": 136.0
+            },
+            "mining_activity": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1-score": 0.0,
+              "support": 72.0
+            },
+            "gas_flare": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1-score": 0.0,
+              "support": 0.0
+            },
+            "accuracy": 0.9801825293350717,
+            "macro avg": {
+              "precision": 0.4948690251147718,
+              "recall": 0.49264705882352944,
+              "f1-score": 0.4936765694040032,
+              "support": 3835.0
+            },
+            "weighted avg": {
+              "precision": 0.9618148152190638,
+              "recall": 0.9801825293350717,
+              "f1-score": 0.9708902598501221,
+              "support": 3835.0
+            }
+          },
+          "confusion_matrix": [
+            [
+              3627,
+              0,
+              0,
+              0
+            ],
+            [
+              4,
+              132,
+              0,
+              0
+            ],
+            [
+              72,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0
+            ]
+          ]
+        }
+      },
+      "1": {
+        "trusted": {
+          "n": 44,
+          "macro_f1": 0.3735632183908046,
+          "macro_f1_no_flare": 0.5028124235754463,
+          "balanced_accuracy": 0.39869281045751637,
+          "per_class": {
+            "agricultural_burning": {
+              "precision": 0.5333333333333333,
+              "recall": 0.8888888888888888,
+              "f1-score": 0.6666666666666666,
+              "support": 18.0
+            },
+            "industrial_fire": {
+              "precision": 1.0,
+              "recall": 0.7058823529411765,
+              "f1-score": 0.8275862068965517,
+              "support": 17.0
+            },
+            "mining_activity": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1-score": 0.0,
+              "support": 8.0
+            },
+            "gas_flare": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1-score": 0.0,
+              "support": 1.0
+            },
+            "accuracy": 0.6363636363636364,
+            "macro avg": {
+              "precision": 0.3833333333333333,
+              "recall": 0.39869281045751637,
+              "f1-score": 0.3735632183908046,
+              "support": 44.0
+            },
+            "weighted avg": {
+              "precision": 0.6045454545454546,
+              "recall": 0.6363636363636364,
+              "f1-score": 0.5924764890282131,
+              "support": 44.0
+            }
+          },
+          "confusion_matrix": [
+            [
+              16,
+              0,
+              2,
+              0
+            ],
+            [
+              5,
+              12,
+              0,
+              0
+            ],
+            [
+              8,
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              0,
+              0,
+              0
+            ]
+          ]
+        },
+        "all_events": {
+          "n": 3773,
+          "macro_f1": 0.49473366645923067,
+          "macro_f1_no_flare": 0.6596906696039286,
+          "balanced_accuracy": 0.49060020245562985,
+          "per_class": {
+            "agricultural_burning": {
+              "precision": 0.9961506736321144,
+              "recall": 0.9988971601874828,
+              "f1-score": 0.9975220264317181,
+              "support": 3627.0
+            },
+            "industrial_fire": {
+              "precision": 1.0,
+              "recall": 0.9635036496350365,
+              "f1-score": 0.9814126394052045,
+              "support": 137.0
+            },
+            "mining_activity": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1-score": 0.0,
+              "support": 8.0
+            },
+            "gas_flare": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1-score": 0.0,
+              "support": 1.0
+            },
+            "accuracy": 0.995229260535383,
+            "macro avg": {
+              "precision": 0.4990376684080286,
+              "recall": 0.49060020245562985,
+              "f1-score": 0.49473366645923067,
+              "support": 3773.0
+            },
+            "weighted avg": {
+              "precision": 0.9939142574247758,
+              "recall": 0.995229260535383,
+              "f1-score": 0.994557625620555,
+              "support": 3773.0
+            }
+          },
+          "confusion_matrix": [
+            [
+              3623,
+              0,
+              4,
+              0
+            ],
+            [
+              5,
+              132,
+              0,
+              0
+            ],
+            [
+              8,
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              0,
+              0,
+              0
+            ]
+          ]
+        }
+      },
+      "2": {
+        "trusted": {
+          "n": 51,
+          "macro_f1": 0.35282651072124754,
+          "macro_f1_no_flare": 0.4982716049382716,
+          "balanced_accuracy": 0.4079861111111111,
+          "per_class": {
+            "agricultural_burning": {
+              "precision": 0.4358974358974359,
+              "recall": 0.9444444444444444,
+              "f1-score": 0.5964912280701754,
+              "support": 18.0
+            },
+            "industrial_fire": {
+              "precision": 1.0,
+              "recall": 0.6875,
+              "f1-score": 0.8148148148148148,
+              "support": 16.0
+            },
+            "mining_activity": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1-score": 0.0,
+              "support": 10.0
+            },
+            "gas_flare": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1-score": 0.0,
+              "support": 7.0
+            },
+            "accuracy": 0.5490196078431373,
+            "macro avg": {
+              "precision": 0.358974358974359,
+              "recall": 0.4079861111111111,
+              "f1-score": 0.35282651072124754,
+              "support": 51.0
+            },
+            "weighted avg": {
+              "precision": 0.4675716440422323,
+              "recall": 0.5490196078431373,
+              "f1-score": 0.46615449298627837,
+              "support": 51.0
+            }
+          },
+          "confusion_matrix": [
+            [
+              17,
+              0,
+              1,
+              0
+            ],
+            [
+              5,
+              11,
+              0,
+              0
+            ],
+            [
+              10,
+              0,
+              0,
+              0
+            ],
+            [
+              7,
+              0,
+              0,
+              0
+            ]
+          ]
+        },
+        "all_events": {
+          "n": 3780,
+          "macro_f1": 0.49445900928527914,
+          "macro_f1_no_flare": 0.6595987055816893,
+          "balanced_accuracy": 0.4906020410645648,
+          "per_class": {
+            "agricultural_burning": {
+              "precision": 0.9939659901261657,
+              "recall": 0.9991728701406121,
+              "f1-score": 0.9965626289014162,
+              "support": 3627.0
+            },
+            "industrial_fire": {
+              "precision": 1.0,
+              "recall": 0.9632352941176471,
+              "f1-score": 0.9812734082397003,
+              "support": 136.0
+            },
+            "mining_activity": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1-score": 0.0,
+              "support": 10.0
+            },
+            "gas_flare": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1-score": 0.0,
+              "support": 7.0
+            },
+            "accuracy": 0.9933862433862434,
+            "macro avg": {
+              "precision": 0.4984914975315414,
+              "recall": 0.4906020410645648,
+              "f1-score": 0.49445900928527914,
+              "support": 3780.0
+            },
+            "weighted avg": {
+              "precision": 0.9897128693617997,
+              "recall": 0.9933862433862434,
+              "f1-score": 0.9915306451179989,
+              "support": 3780.0
+            }
+          },
+          "confusion_matrix": [
+            [
+              3624,
+              0,
+              3,
+              0
+            ],
+            [
+              5,
+              131,
+              0,
+              0
+            ],
+            [
+              10,
+              0,
+              0,
+              0
+            ],
+            [
+              7,
+              0,
+              0,
+              0
+            ]
+          ]
+        }
+      },
+      "3": {
+        "trusted": {
+          "n": 40,
+          "macro_f1": 0.2770979020979021,
+          "macro_f1_no_flare": 0.36946386946386944,
+          "balanced_accuracy": 0.4128540305010893,
+          "per_class": {
+            "agricultural_burning": {
+              "precision": 0.5,
+              "recall": 0.9444444444444444,
+              "f1-score": 0.6538461538461539,
+              "support": 18.0
+            },
+            "industrial_fire": {
+              "precision": 1.0,
+              "recall": 0.29411764705882354,
+              "f1-score": 0.45454545454545453,
+              "support": 17.0
+            },
+            "mining_activity": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1-score": 0.0,
+              "support": 5.0
+            },
+            "gas_flare": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1-score": 0.0,
+              "support": 0.0
+            },
+            "accuracy": 0.55,
+            "macro avg": {
+              "precision": 0.375,
+              "recall": 0.309640522875817,
+              "f1-score": 0.2770979020979021,
+              "support": 40.0
+            },
+            "weighted avg": {
+              "precision": 0.65,
+              "recall": 0.55,
+              "f1-score": 0.4874125874125874,
+              "support": 40.0
+            }
+          },
+          "confusion_matrix": [
+            [
+              17,
+              0,
+              1,
+              0
+            ],
+            [
+              12,
+              5,
+              0,
+              0
+            ],
+            [
+              5,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0
+            ]
+          ]
+        },
+        "all_events": {
+          "n": 3771,
+          "macro_f1": 0.48798308348232705,
+          "macro_f1_no_flare": 0.6506441113097694,
+          "balanced_accuracy": 0.6374974034482207,
+          "per_class": {
+            "agricultural_burning": {
+              "precision": 0.9953335163326928,
+              "recall": 0.9994487320837927,
+              "f1-score": 0.9973868793838536,
+              "support": 3628.0
+            },
+            "industrial_fire": {
+              "precision": 1.0,
+              "recall": 0.9130434782608695,
+              "f1-score": 0.9545454545454546,
+              "support": 138.0
+            },
+            "mining_activity": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1-score": 0.0,
+              "support": 5.0
+            },
+            "gas_flare": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1-score": 0.0,
+              "support": 0.0
+            },
+            "accuracy": 0.9949615486608326,
+            "macro avg": {
+              "precision": 0.4988333790831732,
+              "recall": 0.47812305258616555,
+              "f1-score": 0.48798308348232705,
+              "support": 3771.0
+            },
+            "weighted avg": {
+              "precision": 0.9941845657000821,
+              "recall": 0.9949615486608326,
+              "f1-score": 0.9944966510559251,
+              "support": 3771.0
+            }
+          },
+          "confusion_matrix": [
+            [
+              3626,
+              0,
+              2,
+              0
+            ],
+            [
+              12,
+              126,
+              0,
+              0
+            ],
+            [
+              5,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0
+            ]
+          ]
+        }
+      },
+      "4": {
+        "trusted": {
+          "n": 40,
+          "macro_f1": 0.4439102564102564,
+          "macro_f1_no_flare": 0.5918803418803419,
+          "balanced_accuracy": 0.5764705882352941,
+          "per_class": {
+            "agricultural_burning": {
+              "precision": 0.6,
+              "recall": 1.0,
+              "f1-score": 0.75,
+              "support": 18.0
+            },
+            "industrial_fire": {
+              "precision": 1.0,
+              "recall": 0.5294117647058824,
+              "f1-score": 0.6923076923076923,
+              "support": 17.0
+            },
+            "mining_activity": {
+              "precision": 1.0,
+              "recall": 0.2,
+              "f1-score": 0.3333333333333333,
+              "support": 5.0
+            },
+            "gas_flare": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1-score": 0.0,
+              "support": 0.0
+            },
+            "accuracy": 0.7,
+            "macro avg": {
+              "precision": 0.65,
+              "recall": 0.43235294117647055,
+              "f1-score": 0.4439102564102564,
+              "support": 40.0
+            },
+            "weighted avg": {
+              "precision": 0.82,
+              "recall": 0.7,
+              "f1-score": 0.6733974358974358,
+              "support": 40.0
+            }
+          },
+          "confusion_matrix": [
+            [
+              18,
+              0,
+              0,
+              0
+            ],
+            [
+              8,
+              9,
+              0,
+              0
+            ],
+            [
+              4,
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0
+            ]
+          ]
+        },
+        "all_events": {
+          "n": 3770,
+          "macro_f1": 0.5475765534163137,
+          "macro_f1_no_flare": 0.7301020712217516,
+          "balanced_accuracy": 0.7137339518826195,
+          "per_class": {
+            "agricultural_burning": {
+              "precision": 0.9966996699669967,
+              "recall": 0.9991728701406121,
+              "f1-score": 0.9979347377116894,
+              "support": 3627.0
+            },
+            "industrial_fire": {
+              "precision": 1.0,
+              "recall": 0.9420289855072463,
+              "f1-score": 0.9701492537313433,
+              "support": 138.0
+            },
+            "mining_activity": {
+              "precision": 0.25,
+              "recall": 0.2,
+              "f1-score": 0.2222222222222222,
+              "support": 5.0
+            },
+            "gas_flare": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1-score": 0.0,
+              "support": 0.0
+            },
+            "accuracy": 0.9960212201591512,
+            "macro avg": {
+              "precision": 0.5616749174917491,
+              "recall": 0.5353004639119646,
+              "f1-score": 0.5475765534163137,
+              "support": 3770.0
+            },
+            "weighted avg": {
+              "precision": 0.9958301599390708,
+              "recall": 0.9960212201591512,
+              "f1-score": 0.9958888598955794,
+              "support": 3770.0
+            }
+          },
+          "confusion_matrix": [
+            [
+              3624,
+              0,
+              3,
+              0
+            ],
+            [
+              8,
+              130,
+              0,
+              0
+            ],
+            [
+              4,
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0
+            ]
+          ]
+        }
+      }
+    },
+    "trusted_events": 281,
+    "all_events": 18929,
+    "trusted_weight": 5.0,
+    "feature_importances_mean": {
+      "hot_px_center": 0.060621315589551125,
+      "n_days": 0.055344219333103885,
+      "duration_days": 0.05127290292982687,
+      "mean_frp": 0.04984372667206606,
+      "mndwi_mean": 0.04831979041105557,
+      "ndbi_center": 0.04805840290563898,
+      "max_frp": 0.04771308635609576,
+      "scl_water_frac": 0.045623517426189565,
+      "nbr2_center": 0.03969575200952481,
+      "b12_center_max": 0.03798879842408627,
+      "median_frp": 0.03421977506057063,
+      "ndbi_mean": 0.03014032704976488,
+      "median_temp_diff": 0.0288731623788137,
+      "mndwi_center": 0.027691368455163918,
+      "nbr_center": 0.026190800357587963,
+      "frac_night": 0.02388247713968411,
+      "nbr_mean": 0.02057015465800992,
+      "gndvi_mean": 0.019548689963881424,
+      "mndwi_std": 0.019203312346335606,
+      "hot_px_total": 0.019049623511201617,
+      "nbr2_mean": 0.017625926790939085,
+      "gndvi_center": 0.016835640821551888,
+      "evi_center": 0.01652856826617277,
+      "B11_center": 0.014679446562314857,
+      "n_detections": 0.01407208315572095,
+      "gndvi_std": 0.01397729851518605,
+      "frac_builtup": 0.013124464454365024,
+      "b12_hotspot_ratio": 0.012622920151277897,
+      "ndvi_std": 0.01220211334774773,
+      "ndvi_mean": 0.011351548899553936,
+      "evi_mean": 0.010912279201997967,
+      "frac_water": 0.01032868850063504,
+      "frac_low_nbr": 0.010189428106908826,
+      "ndvi_center": 0.010109980436790204,
+      "B12_center": 0.008655515052717385,
+      "B08_center": 0.008609430286026426,
+      "evi_std": 0.0084111252135956,
+      "scl_bare_frac": 0.0075931459489486045,
+      "nbr_std": 0.006374342018911061,
+      "ndbi_std": 0.006177927191197389,
+      "frac_vegetation": 0.005963236209265073,
+      "nbr2_std": 0.005838563819539967,
+      "scl_veg_frac": 0.004645032275160333,
+      "B04_center": 0.003735576244502589,
+      "B03_center": 0.003269644286055414,
+      "scl_cloud_frac": 0.003216622875726398,
+      "month_last": 0.003141846295871435,
+      "month_first": 0.0031332925435391956,
+      "B02_center": 0.0028231095496283084,
+      "has_image": 3.8597731330425805e-19,
+      "nearest_osm_distance_km": 0.0,
+      "industrial_count_1km": 0.0,
+      "industrial_count_2km": 0.0,
+      "industrial_count_5km": 0.0,
+      "power_plant_count_5km": 0.0,
+      "quarry_count_5km": 0.0,
+      "flare_count_5km": 0.0,
+      "petroleum_well_count_5km": 0.0,
+      "industrial_landuse_nearby": 0.0
+    }
+  },
+  "inference_note": "Requires event-level image features joined to each detection; not a drop-in for the current API model."
+}

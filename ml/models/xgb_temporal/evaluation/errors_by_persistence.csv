@@ -1,0 +1,8 @@
+persist_bin,y,n,err
+2-4 days,industrial_fire,56,0.0
+2-4 days,mining_activity,105,0.0
+5-14 days,agricultural_burning,219,0.0
+5-14 days,industrial_fire,36,0.4722
+5-14 days,mining_activity,260,0.0
+15+ days,industrial_fire,189,0.0
+15+ days,mining_activity,1978,0.0

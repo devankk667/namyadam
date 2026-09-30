@@ -1,0 +1,30 @@
+{
+  "model": "SelfTrainedRF_round1",
+  "features": [
+    "bright_ti4",
+    "bright_ti5",
+    "temp_diff",
+    "frp",
+    "conf_ord",
+    "is_night",
+    "nearest_osm_distance_km",
+    "industrial_count_1km",
+    "industrial_count_2km",
+    "industrial_count_5km",
+    "power_plant_count_5km",
+    "quarry_count_5km",
+    "flare_count_5km",
+    "petroleum_well_count_5km",
+    "industrial_landuse_nearby"
+  ],
+  "classes": [
+    "agricultural_burning",
+    "gas_flare",
+    "industrial_fire",
+    "mining_activity"
+  ],
+  "macro_f1": 0.75,
+  "train_obs": 66559,
+  "pseudo_obs": 60637,
+  "threshold": 0.95
+}

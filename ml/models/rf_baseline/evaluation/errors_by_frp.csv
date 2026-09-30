@@ -1,0 +1,11 @@
+frp_bin,y,n,err
+<2,agricultural_burning,143,0.0
+<2,industrial_fire,119,0.0252
+<2,mining_activity,1631,0.0
+2-5,agricultural_burning,56,0.0
+2-5,industrial_fire,115,0.0783
+2-5,mining_activity,644,0.0
+5-15,agricultural_burning,20,0.0
+5-15,industrial_fire,25,0.4
+5-15,mining_activity,68,0.0
+15-50,industrial_fire,22,0.0909
