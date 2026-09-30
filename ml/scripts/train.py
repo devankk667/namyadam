@@ -90,43 +90,13 @@ def train_and_evaluate():
         "roc_auc_ovr": float(roc_auc_score(y_test, y_proba_xgb, multi_class="ovr")),
     }
 
-    # 4. PyTorch Multimodal Net
-    device = torch.device("cpu")
-    pt_net = MultimodalThermalNet(input_dim=X_train.shape[1], num_classes=len(TARGET_CLASSES)).to(device)
-    criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(pt_net.parameters(), lr=0.005)
-
-    dataset_train = TensorDataset(torch.tensor(X_train, dtype=torch.float32), torch.tensor(y_train, dtype=torch.long))
-    train_loader = DataLoader(dataset_train, batch_size=32, shuffle=True)
-
-    pt_net.train()
-    for epoch in range(25):
-        for bx, by in train_loader:
-            optimizer.zero_grad()
-            out = pt_net(bx)
-            loss = criterion(out, by)
-            loss.backward()
-            optimizer.step()
-
-    pt_net.eval()
-    with torch.no_grad():
-        test_inputs = torch.tensor(X_test, dtype=torch.float32)
-        logits = pt_net(test_inputs)
-        y_proba_pt = torch.softmax(logits, dim=1).numpy()
-        y_pred_pt = np.argmax(y_proba_pt, axis=1)
-
-    eval_results["pytorch_multimodal"] = {
-        "macro_f1": float(f1_score(y_test, y_pred_pt, average="macro")),
-        "precision_macro": float(precision_score(y_test, y_pred_pt, average="macro")),
-        "recall_macro": float(recall_score(y_test, y_pred_pt, average="macro")),
-        "roc_auc_ovr": float(roc_auc_score(y_test, y_proba_pt, multi_class="ovr")),
-    }
+    
 
     print("\n--- MODEL COMPARISON BENCHMARK ---")
     for mname, metrics in eval_results.items():
         print(f"Model: {mname:<20} | Macro F1: {metrics['macro_f1']:.4f} | ROC-AUC: {metrics['roc_auc_ovr']:.4f}")
 
-    # Select best model (XGBoost / Random Forest)
+    # Select best model based on macro F1
     best_model_name = max(eval_results, key=lambda k: eval_results[k]["macro_f1"])
     print(f"\nBest performing model: {best_model_name}")
 
@@ -145,7 +115,16 @@ def train_and_evaluate():
     else:
         importances = {fn: 1.0 / len(feature_names) for fn in feature_names}
 
-    cm = confusion_matrix(y_test, xgb.predict(X_test) if best_model_name == "xgboost" else y_pred_rf).tolist()
+    prediction_map = {
+        "logistic_regression": y_pred_lr,
+        "random_forest": y_pred_rf,
+        "xgboost": y_pred_xgb,
+    }
+
+    cm = confusion_matrix(
+        y_test,
+        prediction_map[best_model_name]
+    ).tolist()
 
     metadata = {
         "model_name": best_model_name,
