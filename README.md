@@ -2,6 +2,8 @@
 
 An enterprise-grade, geospatial decision-support platform built to detect, classify, and monitor industrial fires, persistent thermal sources (refineries, flare stacks, gas terminals, chemical works), wildfires, and agricultural burnings using satellite imagery, NASA FIRMS thermal observations, and OpenStreetMap (OSM) spatial context.
 
+Website working Link : https://thermalguard.buildbox.website/
+
 ---
 
 ## 📸 Key Application Interfaces
